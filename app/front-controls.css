@@ -142,7 +142,7 @@
 }
 
 .archive-card-focus-sheet {
-  grid-template-rows: 56% auto 1fr !important;
+  grid-template-rows: 60% auto 1fr !important;
   padding-top: 3px !important;
 }
 
@@ -171,7 +171,7 @@
   }
 
   .archive-card-focus-sheet {
-    grid-template-rows: 56% auto 1fr !important;
+    grid-template-rows: 60% auto 1fr !important;
     padding-top: 3px !important;
   }
 
