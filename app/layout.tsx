@@ -4,6 +4,7 @@ import ArchivePerformanceFix from "./archive-performance-fix";
 import ArchiveCardFocus from "./archive-card-focus";
 import CalendarExperienceFix from "./calendar-experience-fix";
 import CalendarVisualTuning from "./calendar-visual-tuning";
+import RemoveFrontControls from "./remove-front-controls";
 import "./globals.css";
 
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
@@ -25,6 +26,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <ArchiveCardFocus />
         <CalendarExperienceFix />
         <CalendarVisualTuning />
+        <RemoveFrontControls />
       </body>
     </html>
   );
