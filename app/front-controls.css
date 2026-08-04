@@ -137,13 +137,12 @@
   }
 }
 
-/* Focused archive card: keep bottom space, compress every other vertical gap. */
 .archive-card-focus-overlay {
   padding-top: 6px !important;
 }
 
 .archive-card-focus-sheet {
-  grid-template-rows: 48% auto 1fr !important;
+  grid-template-rows: 56% auto 1fr !important;
   padding-top: 3px !important;
 }
 
@@ -153,13 +152,13 @@
 }
 
 .archive-card-focus-sheet .archive-date span {
-  font-size: clamp(46px, 10.8vw, 66px) !important;
-  line-height: .86 !important;
+  font-size: clamp(55px, 13vw, 79px) !important;
+  line-height: .84 !important;
 }
 
 .archive-card-focus-sheet .archive-date strong {
-  font-size: clamp(88px, 17.8vw, 116px) !important;
-  line-height: .79 !important;
+  font-size: clamp(106px, 21.4vw, 139px) !important;
+  line-height: .77 !important;
 }
 
 .archive-card-focus-sheet .archive-footer {
@@ -172,7 +171,7 @@
   }
 
   .archive-card-focus-sheet {
-    grid-template-rows: 48% auto 1fr !important;
+    grid-template-rows: 56% auto 1fr !important;
     padding-top: 3px !important;
   }
 
@@ -182,11 +181,11 @@
   }
 
   .archive-card-focus-sheet .archive-date span {
-    font-size: clamp(42px, 11.5vw, 57px) !important;
+    font-size: clamp(50px, 13.8vw, 68px) !important;
   }
 
   .archive-card-focus-sheet .archive-date strong {
-    font-size: clamp(80px, 19vw, 104px) !important;
+    font-size: clamp(96px, 22.8vw, 125px) !important;
   }
 
   .archive-card-focus-sheet .archive-footer {
