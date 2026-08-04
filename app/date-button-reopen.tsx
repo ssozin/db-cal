@@ -17,7 +17,7 @@ export default function DateButtonReopen() {
         const selected = button.classList.contains("is-selected");
         const label = mobileQuery.matches
           ? selected
-            ? "-"
+            ? "·"
             : String(index + 1).padStart(2, "0")
           : desktopLabels[index];
 
