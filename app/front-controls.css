@@ -133,13 +133,12 @@
   }
 }
 
-/* Focused card: keep weekday, month and day fully inside the card. */
 .archive-card-focus-overlay {
   padding-top: 6px !important;
 }
 
 .archive-card-focus-sheet {
-  grid-template-rows: 43% auto 1fr !important;
+  grid-template-rows: 47% auto 1fr !important;
   padding: 18px 18px 16px !important;
 }
 
@@ -147,11 +146,11 @@
   display: flex !important;
   flex-direction: column !important;
   align-items: center !important;
-  justify-content: center !important;
+  justify-content: flex-end !important;
   min-height: 0 !important;
-  padding: 0 0 16px !important;
+  padding: 0 0 12px !important;
   overflow: visible !important;
-  transform: translateY(8px) !important;
+  transform: none !important;
   box-sizing: border-box !important;
 }
 
@@ -177,7 +176,7 @@
 
 .archive-card-focus-sheet .archive-photo {
   margin: 0 !important;
-  transform: translateY(8px) !important;
+  transform: none !important;
 }
 
 .archive-card-focus-sheet .archive-footer {
@@ -191,13 +190,14 @@
   }
 
   .archive-card-focus-sheet {
-    grid-template-rows: 43% auto 1fr !important;
-    padding: 14px 14px 14px !important;
+    grid-template-rows: 47% auto 1fr !important;
+    padding: 14px !important;
   }
 
   .archive-card-focus-sheet .archive-date {
-    padding: 0 0 12px !important;
-    transform: translateY(6px) !important;
+    justify-content: flex-end !important;
+    padding: 0 0 10px !important;
+    transform: none !important;
   }
 
   .archive-card-focus-sheet .archive-date span {
@@ -212,7 +212,7 @@
   }
 
   .archive-card-focus-sheet .archive-photo {
-    transform: translateY(6px) !important;
+    transform: none !important;
   }
 
   .archive-card-focus-sheet .archive-footer {
