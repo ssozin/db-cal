@@ -150,6 +150,8 @@
 
 .archive-card-focus-date {
   margin-top: 0 !important;
+  transform: scale(.9) !important;
+  transform-origin: 50% 50% !important;
 }
 
 .archive-card-focus-footer {
@@ -167,6 +169,8 @@
 
   .archive-card-focus-date {
     margin-top: 0 !important;
+    transform: scale(.9) !important;
+    transform-origin: 50% 50% !important;
   }
 
   .archive-card-focus-footer {
