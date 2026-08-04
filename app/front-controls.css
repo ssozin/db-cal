@@ -149,16 +149,24 @@
 .archive-card-focus-sheet .archive-date {
   justify-content: flex-end !important;
   padding: 0 0 1px !important;
+  overflow: hidden !important;
+}
+
+.archive-card-focus-sheet .archive-date span,
+.archive-card-focus-sheet .archive-date strong {
+  display: block !important;
+  max-width: 100% !important;
+  white-space: nowrap !important;
 }
 
 .archive-card-focus-sheet .archive-date span {
-  font-size: clamp(55px, 13vw, 79px) !important;
-  line-height: .84 !important;
+  font-size: clamp(59px, 13.8vw, 85px) !important;
+  line-height: .72 !important;
 }
 
 .archive-card-focus-sheet .archive-date strong {
-  font-size: clamp(106px, 21.4vw, 139px) !important;
-  line-height: .77 !important;
+  font-size: clamp(114px, 22.8vw, 150px) !important;
+  line-height: .68 !important;
 }
 
 .archive-card-focus-sheet .archive-footer {
@@ -181,11 +189,13 @@
   }
 
   .archive-card-focus-sheet .archive-date span {
-    font-size: clamp(50px, 13.8vw, 68px) !important;
+    font-size: clamp(54px, 14.8vw, 74px) !important;
+    line-height: .72 !important;
   }
 
   .archive-card-focus-sheet .archive-date strong {
-    font-size: clamp(96px, 22.8vw, 125px) !important;
+    font-size: clamp(103px, 24.5vw, 134px) !important;
+    line-height: .68 !important;
   }
 
   .archive-card-focus-sheet .archive-footer {
