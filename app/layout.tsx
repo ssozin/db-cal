@@ -5,6 +5,7 @@ import ArchiveCardFocus from "./archive-card-focus";
 import CalendarExperienceFix from "./calendar-experience-fix";
 import CalendarVisualTuning from "./calendar-visual-tuning";
 import "./globals.css";
+import "./front-controls.css";
 
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
