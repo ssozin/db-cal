@@ -3,25 +3,49 @@
   display: none !important;
 }
 
-.toolbar-actions > button {
-  min-width: 22px !important;
+.toolbar-actions > button,
+.toolbar-actions > button.is-selected {
+  position: relative !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 28px !important;
+  min-width: 28px !important;
+  height: 28px !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  overflow: visible !important;
+  color: #a3a3a3 !important;
   font-size: 0 !important;
-  cursor: pointer !important;
+  line-height: 1 !important;
+  opacity: 1 !important;
+}
+
+.toolbar-actions > button::before {
+  content: none !important;
+  display: none !important;
 }
 
 html body .toolbar-actions > button::after {
   position: static !important;
-  display: inline !important;
+  display: inline-block !important;
   width: auto !important;
   height: auto !important;
   border: 0 !important;
+  border-radius: 0 !important;
   background: transparent !important;
+  box-shadow: none !important;
   transform: none !important;
   opacity: 1 !important;
   color: inherit !important;
-  font: inherit !important;
+  font-family: inherit !important;
   font-size: 11px !important;
-  pointer-events: none !important;
+  font-weight: 400 !important;
+  line-height: 1 !important;
 }
 
 html body .toolbar-actions > button:nth-child(1)::after {
@@ -36,7 +60,11 @@ html body .toolbar-actions > button:nth-child(3)::after {
   content: "03" !important;
 }
 
-html body .toolbar-actions > button:nth-child(3).is-selected::after {
-  display: inline !important;
+html body .toolbar-actions > button.is-selected {
+  color: #111 !important;
+}
+
+html body .toolbar-actions > button.is-selected::after {
   content: "-" !important;
+  font-weight: 700 !important;
 }
