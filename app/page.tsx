@@ -318,7 +318,11 @@ export default function Home() {
           className={`calendar-shell${finished ? " is-finished" : ""}`}
           aria-label="2026 tear-off calendar"
           style={{
-          transform: `rotateY(${rotation}deg)`,
+          // A perfectly flat rotateY(0deg) collapses to an identity matrix on
+          // some mobile WebKit builds, which drops the 3D depth stacking for
+          // translateZ'd shadow layers until the user rotates the calendar.
+          // Nudging by a hair keeps the 3D context alive at rest too.
+          transform: `rotateY(${rotation || 0.01}deg)`,
           "--removed-depth": `${removedDepth}px`,
           "--removed-depth-negative": `${-removedDepth}px`,
           "--remaining-depth": `${remainingDepth}px`,
