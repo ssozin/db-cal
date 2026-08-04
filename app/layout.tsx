@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import ArchivePerformanceFix from "./archive-performance-fix";
+import ArchiveCardFocus from "./archive-card-focus";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -32,11 +33,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
+      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         {children}
         <ArchivePerformanceFix />
+        <ArchiveCardFocus />
       </body>
     </html>
   );
