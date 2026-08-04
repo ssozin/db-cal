@@ -22,7 +22,7 @@ const styles = `
 .archive-card-focus-overlay.is-visible{opacity:1}
 .archive-card-focus-card{
   position:relative;
-  width:min(82vw,420px,calc((100svh - 36px) * 382 / 430));
+  width:min(82vw,420px);
   max-width:calc(100vw - 36px);
   transform:scale(.92);
   transition:transform .24s cubic-bezier(.2,.8,.2,1);
@@ -139,7 +139,7 @@ const styles = `
 body.archive-card-focus-open{overflow:hidden}
 @media(max-width:640px){
   .archive-card-focus-overlay{padding:12px}
-  .archive-card-focus-card{width:min(88vw,360px,calc((100svh - 24px) * 382 / 430));max-width:calc(100vw - 24px)}
+  .archive-card-focus-card{width:min(88vw,360px);max-width:calc(100vw - 24px)}
   .archive-card-focus-sheet{padding:8px 12px 8px!important}
   .archive-card-focus-close{top:max(10px,env(safe-area-inset-top));right:10px;font-size:34px}
   .archive-card-focus-sheet .archive-date span{font-size:clamp(31px,8.6vw,42px)}
