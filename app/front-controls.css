@@ -2,3 +2,33 @@
 .calendar-color-control {
   display: none !important;
 }
+
+.toolbar-actions > button {
+  font-size: 0 !important;
+}
+
+html body .toolbar-actions > button::after {
+  position: static !important;
+  display: inline !important;
+  width: auto !important;
+  height: auto !important;
+  border: 0 !important;
+  background: transparent !important;
+  transform: none !important;
+  opacity: 1 !important;
+  color: inherit !important;
+  font: inherit !important;
+  font-size: 11px !important;
+}
+
+html body .toolbar-actions > button:nth-child(1)::after {
+  content: "01" !important;
+}
+
+html body .toolbar-actions > button:nth-child(2)::after {
+  content: "02" !important;
+}
+
+html body .toolbar-actions > button:nth-child(3)::after {
+  content: "03" !important;
+}
