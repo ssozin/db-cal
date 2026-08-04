@@ -60,7 +60,7 @@ const styles = `
   display:block;
   margin:0;
   padding:0;
-  font-size:clamp(42px,9.6vw,58px);
+  font-size:clamp(38px,8.64vw,52px);
   font-weight:400;
   line-height:.9;
   letter-spacing:-.04em;
@@ -70,7 +70,7 @@ const styles = `
   display:block;
   margin:3px 0 0;
   padding:0;
-  font-size:clamp(78px,15.8vw,104px);
+  font-size:clamp(70px,14.22vw,94px);
   font-weight:400;
   line-height:.84;
   letter-spacing:-.055em;
@@ -102,8 +102,9 @@ const styles = `
   gap:8px;
   min-height:0;
   padding-top:10px;
+  padding-bottom:5px;
   color:#3c3c42;
-  font:7px/1.2 Arial,sans-serif;
+  font:8px/1.2 Arial,sans-serif;
   letter-spacing:.07em;
 }
 .archive-card-focus-footer div{
@@ -135,10 +136,10 @@ body.archive-card-focus-open{overflow:hidden}
   .archive-card-focus-card{width:min(96.8vw,396px);max-width:calc(100vw - 24px)}
   .archive-card-focus-sheet{padding:14px 14px 12px}
   .archive-card-focus-close{top:max(10px,env(safe-area-inset-top));right:10px;font-size:34px}
-  .archive-card-focus-date span{font-size:clamp(37px,10.3vw,50px)}
-  .archive-card-focus-date strong{font-size:clamp(69px,17vw,92px)}
+  .archive-card-focus-date span{font-size:clamp(33px,9.27vw,45px)}
+  .archive-card-focus-date strong{font-size:clamp(62px,15.3vw,83px)}
   .archive-card-focus-photo{margin-top:8px}
-  .archive-card-focus-footer{font-size:6px;padding-top:8px}
+  .archive-card-focus-footer{font-size:7px;padding-top:8px;padding-bottom:4px}
 }
 `;
 
