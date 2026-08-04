@@ -262,8 +262,6 @@ export default function Home() {
   const fullStackDepth = dates.length * 0.22;
   const removedDepth = (removedPages / dates.length) * fullStackDepth;
   const remainingDepth = Math.max(1.5, (remainingPages / dates.length) * fullStackDepth);
-  const frontShadowY = 5 + removedDepth * 0.34;
-  const frontShadowBlur = 8 + removedDepth * 0.62;
   const tearShadowDepth = Math.max(1, Math.min(46, removedDepth * 0.72));
   const tearShadowBlur = 0.6 + removedDepth * 0.025;
   const tornCount = finished ? dates.length : index;
@@ -329,8 +327,6 @@ export default function Home() {
           "--remaining-depth-negative": `${-remainingDepth}px`,
           "--full-depth": `${fullStackDepth}px`,
           "--full-depth-negative": `${-fullStackDepth}px`,
-          "--front-shadow-y": `${frontShadowY}px`,
-          "--front-shadow-blur": `${frontShadowBlur}px`,
           "--tear-shadow-depth": `${tearShadowDepth}px`,
           "--tear-shadow-blur": `${tearShadowBlur}px`,
           "--drop-x": `${landingX}vw`,
@@ -373,7 +369,6 @@ export default function Home() {
               <div className="day-count">DAY {String(Math.min(dayNumber + 1, 365)).padStart(3, "0")} / 365</div>
             </footer>
           </div>
-          <div className="paper-cast-shadow" aria-hidden="true" />
           <div
             className={`paper paper-current ${falling ? "is-falling" : ""} ${jumping ? "is-jumping" : ""}`}
           >
