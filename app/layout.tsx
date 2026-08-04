@@ -4,6 +4,7 @@ import ArchivePerformanceFix from "./archive-performance-fix";
 import ArchiveCardFocus from "./archive-card-focus";
 import CalendarExperienceFix from "./calendar-experience-fix";
 import CalendarVisualTuning from "./calendar-visual-tuning";
+import PhotoFetchFallback from "./photo-fetch-fallback";
 import "./globals.css";
 import "./front-controls.css";
 
@@ -21,6 +22,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   return (
     <html lang="en">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+        <PhotoFetchFallback />
         {children}
         <ArchivePerformanceFix />
         <ArchiveCardFocus />
