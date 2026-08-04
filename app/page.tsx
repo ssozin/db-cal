@@ -99,13 +99,11 @@ function unlockTearAudio() {
   const ctx = getPaperAudioContext();
   if (!ctx) return null;
   if (ctx.state === "suspended") {
-    void ctx.resume().then(() => {
-      paperAudioUnlocked = true;
-    }).catch(() => undefined);
-  } else {
-    paperAudioUnlocked = true;
+    void ctx.resume().catch(() => undefined);
   }
-  // Same-callstack silent buffer is what actually unlocks Mobile Safari.
+  // One silent buffer unlocks Mobile Safari. Replaying it on every drag/move
+  // allocates AudioNodes until the tab crashes on phones.
+  if (paperAudioUnlocked) return ctx;
   try {
     const silent = ctx.createBuffer(1, 1, ctx.sampleRate);
     const source = ctx.createBufferSource();
@@ -132,42 +130,46 @@ function playNoiseBurst(
     peakAt = 0.02,
   }: { duration: number; volume: number; highpass: number; lowpass: number; peakAt?: number },
 ) {
-  if (ctx.state === "suspended") void ctx.resume();
-  const now = ctx.currentTime;
-  const frames = Math.max(1, Math.floor(ctx.sampleRate * duration));
-  const buffer = ctx.createBuffer(1, frames, ctx.sampleRate);
-  const data = buffer.getChannelData(0);
-  let pink = 0;
-  for (let i = 0; i < frames; i += 1) {
-    const white = Math.random() * 2 - 1;
-    // Soft pink-ish noise reads more like paper than harsh white noise.
-    pink = pink * 0.86 + white * 0.14;
-    const t = i / frames;
-    const flutter = 0.65 + 0.35 * Math.sin(t * Math.PI * 7 + white);
-    const envelope = Math.exp(-t * 9) * flutter;
-    data[i] = pink * envelope;
-  }
+  try {
+    if (ctx.state === "suspended") void ctx.resume();
+    const now = ctx.currentTime;
+    const frames = Math.max(1, Math.floor(ctx.sampleRate * duration));
+    const buffer = ctx.createBuffer(1, frames, ctx.sampleRate);
+    const data = buffer.getChannelData(0);
+    let pink = 0;
+    for (let i = 0; i < frames; i += 1) {
+      const white = Math.random() * 2 - 1;
+      // Soft pink-ish noise reads more like paper than harsh white noise.
+      pink = pink * 0.86 + white * 0.14;
+      const t = i / frames;
+      const flutter = 0.65 + 0.35 * Math.sin(t * Math.PI * 7 + white);
+      const envelope = Math.exp(-t * 9) * flutter;
+      data[i] = pink * envelope;
+    }
 
-  const source = ctx.createBufferSource();
-  source.buffer = buffer;
-  const hip = ctx.createBiquadFilter();
-  hip.type = "highpass";
-  hip.frequency.value = highpass;
-  const lop = ctx.createBiquadFilter();
-  lop.type = "lowpass";
-  lop.frequency.value = lowpass;
-  const gain = ctx.createGain();
-  // Phone speakers need a bit more level than desktop.
-  const level = volume * (isMobileSoundTarget() ? 1.45 : 1);
-  gain.gain.setValueAtTime(0.0001, now);
-  gain.gain.exponentialRampToValueAtTime(Math.max(0.0002, level), now + peakAt);
-  gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
-  source.connect(hip);
-  hip.connect(lop);
-  lop.connect(gain);
-  gain.connect(ctx.destination);
-  source.start(now);
-  source.stop(now + duration + 0.02);
+    const source = ctx.createBufferSource();
+    source.buffer = buffer;
+    const hip = ctx.createBiquadFilter();
+    hip.type = "highpass";
+    hip.frequency.value = highpass;
+    const lop = ctx.createBiquadFilter();
+    lop.type = "lowpass";
+    lop.frequency.value = lowpass;
+    const gain = ctx.createGain();
+    // Phone speakers need a bit more level than desktop.
+    const level = volume * (isMobileSoundTarget() ? 1.45 : 1);
+    gain.gain.setValueAtTime(0.0001, now);
+    gain.gain.exponentialRampToValueAtTime(Math.max(0.0002, level), now + peakAt);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+    source.connect(hip);
+    hip.connect(lop);
+    lop.connect(gain);
+    gain.connect(ctx.destination);
+    source.start(now);
+    source.stop(now + duration + 0.02);
+  } catch {
+    /* Mobile Safari can throw once the audio graph is under pressure. */
+  }
 }
 
 /** Soft peel / flutter when a page is torn from the pad. */
@@ -186,7 +188,9 @@ function playTearSound() {
 /** Quiet paper rustle when a torn-page card is picked up or dragged. */
 function playPaperSlideSound(force = false) {
   const now = performance.now();
-  if (!force && now - lastPaperSlideAt < 90) return;
+  // Phones already have ~200 archive cards; keep slide audio sparse.
+  const gap = isMobileSoundTarget() ? 180 : 90;
+  if (!force && now - lastPaperSlideAt < gap) return;
   lastPaperSlideAt = now;
   const ctx = unlockTearAudio();
   if (!ctx) return;
@@ -420,7 +424,16 @@ export default function Home() {
   // Depth visuals lag the page index so tear/jump animations never snap the shadow.
   const [depthIndex, setDepthIndex] = useState(() => todayIndex(dates));
   const pointerStart = useRef<{ x: number; y: number; rotation: number } | null>(null);
-  const archiveDrag = useRef<{ page: number; x: number; y: number; offsetX: number; offsetY: number } | null>(null);
+  const archiveDrag = useRef<{
+    page: number;
+    x: number;
+    y: number;
+    offsetX: number;
+    offsetY: number;
+    liveX: number;
+    liveY: number;
+    el: HTMLElement;
+  } | null>(null);
   // Two-finger pinch tracking for the main calendar and, separately, the archive floor.
   const activePointers = useRef<Map<number, { x: number; y: number }>>(new Map());
   const pinchStart = useRef<{ distance: number; zoom: number } | null>(null);
@@ -599,6 +612,16 @@ export default function Home() {
     setZoom((value) => clampZoom(value + direction * 0.06));
   }
 
+  function commitArchiveDrag() {
+    const drag = archiveDrag.current;
+    if (!drag) return;
+    setArchiveOffsets((existing) => ({
+      ...existing,
+      [drag.page]: { x: drag.liveX, y: drag.liveY },
+    }));
+    archiveDrag.current = null;
+  }
+
   // Shared by both the floor (empty space) and individual card pointerdown
   // handlers: whichever one sees the second finger land cancels any
   // in-progress card pick-up/selection and starts a pinch instead, so a
@@ -607,7 +630,7 @@ export default function Home() {
     if (archivePointers.current.size !== 2) return false;
     const [a, b] = Array.from(archivePointers.current.values());
     archivePinchStart.current = { distance: pointerDistance(a, b), zoom: archiveZoom };
-    archiveDrag.current = null;
+    commitArchiveDrag();
     setActiveArchivePage(null);
     return true;
   }
@@ -657,35 +680,62 @@ export default function Home() {
   });
 
   function onArchivePointerDown(event: PointerEvent<HTMLElement>, page: number) {
+    event.stopPropagation();
     unlockTearAudio();
     archivePointers.current.set(event.pointerId, { x: event.clientX, y: event.clientY });
     if (beginArchivePinchIfNeeded()) return;
     const offset = archiveOffsets[page] ?? { x: 0, y: 0 };
-    archiveDrag.current = { page, x: event.clientX, y: event.clientY, offsetX: offset.x, offsetY: offset.y };
+    // Move the active card via CSS vars during the gesture. Committing every
+    // pointermove into React state re-renders ~200 archive cards and crashes
+    // Mobile Safari after a few drags.
+    archiveDrag.current = {
+      page,
+      x: event.clientX,
+      y: event.clientY,
+      offsetX: offset.x,
+      offsetY: offset.y,
+      liveX: offset.x,
+      liveY: offset.y,
+      el: event.currentTarget,
+    };
     setActiveArchivePage(page);
     archiveZCounter.current += 1;
     setArchiveZIndices((existing) => ({ ...existing, [page]: archiveZCounter.current }));
     playPaperSlideSound(true);
-    event.currentTarget.setPointerCapture(event.pointerId);
+    try {
+      event.currentTarget.setPointerCapture(event.pointerId);
+    } catch {
+      /* Pointer may already be gone on quick taps. */
+    }
   }
 
   function onArchivePointerMove(event: PointerEvent<HTMLElement>) {
+    if (archivePointers.current.has(event.pointerId)) {
+      archivePointers.current.set(event.pointerId, { x: event.clientX, y: event.clientY });
+    }
+    if (archivePointers.current.size === 2 && archivePinchStart.current) {
+      const [a, b] = Array.from(archivePointers.current.values());
+      const ratio = pointerDistance(a, b) / archivePinchStart.current.distance;
+      setArchiveZoom(clampZoom(archivePinchStart.current.zoom * ratio));
+      return;
+    }
     const drag = archiveDrag.current;
-    if (!drag) return;
+    if (!drag || drag.el !== event.currentTarget) return;
     const dx = event.clientX - drag.x;
     const dy = event.clientY - drag.y;
+    drag.liveX = drag.offsetX + dx;
+    drag.liveY = drag.offsetY + dy;
+    drag.el.style.setProperty("--archive-x", `${drag.liveX}px`);
+    drag.el.style.setProperty("--archive-y", `${drag.liveY}px`);
     if (Math.hypot(dx, dy) > 6) playPaperSlideSound();
-    setArchiveOffsets((existing) => ({
-      ...existing,
-      [drag.page]: { x: drag.offsetX + dx, y: drag.offsetY + dy },
-    }));
   }
 
   function onArchivePointerUp(event: PointerEvent<HTMLElement>) {
-    const wasDragging = !!archiveDrag.current;
+    event.stopPropagation();
+    const wasDragging = !!archiveDrag.current && archiveDrag.current.el === event.currentTarget;
     archivePointers.current.delete(event.pointerId);
     if (archivePointers.current.size < 2) archivePinchStart.current = null;
-    archiveDrag.current = null;
+    if (wasDragging) commitArchiveDrag();
     setActiveArchivePage(null);
     if (wasDragging) playPaperPlaceSound();
   }
@@ -1004,6 +1054,9 @@ export default function Home() {
             const date = dates[pageIndex];
             const photo = photos[dateKey(date)];
             const offset = archiveOffsets[pageIndex] ?? { x: 0, y: 0 };
+            const liveDrag = archiveDrag.current?.page === pageIndex ? archiveDrag.current : null;
+            const offsetX = liveDrag ? liveDrag.liveX : offset.x;
+            const offsetY = liveDrag ? liveDrag.liveY : offset.y;
             // Wide enough to let cards drift past every edge of the screen —
             // scattered, not corralled back into the visible frame.
             const left = -16 + seeded(pageIndex + 11) * 116;
@@ -1017,8 +1070,8 @@ export default function Home() {
                   top: `${top}%`,
                   zIndex: archiveZIndices[pageIndex] ?? order + 1,
                   "--archive-left": `${left}%`,
-                  "--archive-x": `${offset.x}px`,
-                  "--archive-y": `${offset.y}px`,
+                  "--archive-x": `${offsetX}px`,
+                  "--archive-y": `${offsetY}px`,
                   "--archive-rotate": `${rotate}deg`,
                 } as CSSProperties}
                 onPointerDown={(event) => onArchivePointerDown(event, pageIndex)}
