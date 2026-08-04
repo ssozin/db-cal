@@ -1,6 +1,7 @@
 "use client";
 
 import { CSSProperties, PointerEvent, useEffect, useMemo, useRef, useState } from "react";
+import { toBlob as htmlToImageToBlob } from "html-to-image";
 
 type PhotoMap = Record<string, { url: string; name: string; event: string; sourceDate: string }>;
 
@@ -352,30 +353,53 @@ export default function Home() {
     setCaptureFlash(true);
     window.setTimeout(() => setCaptureFlash(false), 260);
     try {
-      // Let the shutter-flash overlay paint (it lives outside archive-floor,
-      // so it's never part of the capture) before we snapshot the pages.
-      await new Promise((resolve) => window.setTimeout(resolve, 90));
-      const { toBlob } = await import("html-to-image");
-      const blob = await toBlob(node, { pixelRatio: 2, cacheBust: true });
-      if (!blob) return;
+      // Deep into the year there can be 100s of torn-page cards in the DOM
+      // (most scattered off-screen now that nothing clamps them into view).
+      // html-to-image clones + re-fetches every descendant's images, so
+      // capturing all of them could hang/time out on a phone. Only clone
+      // cards that are at least partially on screen — that's what "capture
+      // the calendar cards" means anyway.
+      const blob = await htmlToImageToBlob(node, {
+        pixelRatio: Math.min(1.5, window.devicePixelRatio || 1.5),
+        cacheBust: true,
+        filter: (el) => {
+          if (!(el instanceof HTMLElement) || !el.classList.contains("archive-page")) return true;
+          // Every photo has to be re-fetched and base64-embedded, which is
+          // slow — only bother with cards that are meaningfully on screen
+          // (not just a sliver peeking out from under the pile), or capture
+          // can take so long that a phone's share/save gesture times out.
+          const rect = el.getBoundingClientRect();
+          const visibleWidth = Math.max(0, Math.min(rect.right, window.innerWidth) - Math.max(rect.left, 0));
+          const visibleHeight = Math.max(0, Math.min(rect.bottom, window.innerHeight) - Math.max(rect.top, 0));
+          const area = rect.width * rect.height;
+          return area > 0 && (visibleWidth * visibleHeight) / area > 0.18;
+        },
+      });
+      if (!blob) throw new Error("Capture returned no image data");
       const file = new File([blob], `torn-pages-${Date.now()}.png`, { type: "image/png" });
-      const nav = navigator as Navigator & { canShare?: (data?: ShareData) => boolean };
-      if (nav.canShare?.({ files: [file] })) {
+
+      if (typeof navigator.share === "function") {
         try {
           await navigator.share({ files: [file] });
           return;
         } catch {
-          // User cancelled the share sheet or it's unsupported — fall back to download below.
+          // User cancelled, or this browser's share() doesn't support files — fall through.
         }
       }
+
       const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = file.name;
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      URL.revokeObjectURL(url);
+      // <a download> is silently unreliable on mobile Safari; opening the
+      // image directly lets a phone's long-press "Save Image" always work.
+      const opened = window.open(url, "_blank");
+      if (!opened) {
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = file.name;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+      }
+      window.setTimeout(() => URL.revokeObjectURL(url), 60000);
     } catch (error) {
       console.warn("Could not capture torn pages", error);
     } finally {
