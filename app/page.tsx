@@ -1,6 +1,6 @@
 "use client";
 
-import { CSSProperties, PointerEvent, WheelEvent as ReactWheelEvent, useEffect, useMemo, useRef, useState } from "react";
+import { CSSProperties, PointerEvent, useEffect, useMemo, useRef, useState } from "react";
 
 type PhotoMap = Record<string, { url: string; name: string; event: string; sourceDate: string }>;
 
@@ -67,6 +67,14 @@ function seeded(seed: number) {
   return value - Math.floor(value);
 }
 
+function pointerDistance(a: { x: number; y: number }, b: { x: number; y: number }) {
+  return Math.hypot(a.x - b.x, a.y - b.y);
+}
+
+function clampZoom(value: number) {
+  return Math.max(0.65, Math.min(1.5, Number(value.toFixed(3))));
+}
+
 export default function Home() {
   const dates = useMemo(buildDates, []);
   const [index, setIndex] = useState(() => todayIndex(dates));
@@ -77,6 +85,7 @@ export default function Home() {
   const [finished, setFinished] = useState(false);
   const [rotation, setRotation] = useState(0);
   const [zoom, setZoom] = useState(1);
+  const [archiveZoom, setArchiveZoom] = useState(1);
   const [landingX, setLandingX] = useState(-4.3);
   const [archiveOpen, setArchiveOpen] = useState(false);
   const [archiveOffsets, setArchiveOffsets] = useState<Record<number, { x: number; y: number }>>({});
@@ -91,6 +100,13 @@ export default function Home() {
   const [depthIndex, setDepthIndex] = useState(() => todayIndex(dates));
   const pointerStart = useRef<{ x: number; y: number; rotation: number } | null>(null);
   const archiveDrag = useRef<{ page: number; x: number; y: number; offsetX: number; offsetY: number } | null>(null);
+  // Two-finger pinch tracking for the main calendar and, separately, the archive floor.
+  const activePointers = useRef<Map<number, { x: number; y: number }>>(new Map());
+  const pinchStart = useRef<{ distance: number; zoom: number } | null>(null);
+  const archivePointers = useRef<Map<number, { x: number; y: number }>>(new Map());
+  const archivePinchStart = useRef<{ distance: number; zoom: number } | null>(null);
+  const gestureLayerRef = useRef<HTMLDivElement | null>(null);
+  const archiveFloorRef = useRef<HTMLDivElement | null>(null);
   const photosRef = useRef<PhotoMap>({});
   const current = dates[index];
   const currentPhoto = photos[dateKey(current)];
@@ -188,12 +204,28 @@ export default function Home() {
   }
 
   function onPointerDown(event: PointerEvent<HTMLDivElement>) {
+    activePointers.current.set(event.pointerId, { x: event.clientX, y: event.clientY });
+    if (activePointers.current.size === 2) {
+      const [a, b] = Array.from(activePointers.current.values());
+      pinchStart.current = { distance: pointerDistance(a, b), zoom };
+      pointerStart.current = null;
+      return;
+    }
     if (falling || jumping) return;
     pointerStart.current = { x: event.clientX, y: event.clientY, rotation };
     event.currentTarget.setPointerCapture(event.pointerId);
   }
 
   function onPointerMove(event: PointerEvent<HTMLDivElement>) {
+    if (activePointers.current.has(event.pointerId)) {
+      activePointers.current.set(event.pointerId, { x: event.clientX, y: event.clientY });
+    }
+    if (activePointers.current.size === 2 && pinchStart.current) {
+      const [a, b] = Array.from(activePointers.current.values());
+      const ratio = pointerDistance(a, b) / pinchStart.current.distance;
+      setZoom(clampZoom(pinchStart.current.zoom * ratio));
+      return;
+    }
     if (!pointerStart.current) return;
     const dx = event.clientX - pointerStart.current.x;
     const dy = event.clientY - pointerStart.current.y;
@@ -203,6 +235,8 @@ export default function Home() {
   }
 
   function onPointerUp(event: PointerEvent<HTMLDivElement>) {
+    activePointers.current.delete(event.pointerId);
+    if (activePointers.current.size < 2) pinchStart.current = null;
     if (pointerStart.current) {
       const dx = event.clientX - pointerStart.current.x;
       const dy = event.clientY - pointerStart.current.y;
@@ -214,11 +248,64 @@ export default function Home() {
     pointerStart.current = null;
   }
 
-  function onWheel(event: ReactWheelEvent<HTMLDivElement>) {
+  function onPointerCancel(event: PointerEvent<HTMLDivElement>) {
+    activePointers.current.delete(event.pointerId);
+    if (activePointers.current.size < 2) pinchStart.current = null;
+    pointerStart.current = null;
+  }
+
+  function onWheel(event: WheelEvent) {
     event.preventDefault();
     const direction = event.deltaY > 0 ? -1 : 1;
-    setZoom((value) => Math.max(0.65, Math.min(1.5, Number((value + direction * 0.06).toFixed(2)))));
+    setZoom((value) => clampZoom(value + direction * 0.06));
   }
+
+  function onArchiveFloorPointerDown(event: PointerEvent<HTMLDivElement>) {
+    archivePointers.current.set(event.pointerId, { x: event.clientX, y: event.clientY });
+    if (archivePointers.current.size === 2) {
+      const [a, b] = Array.from(archivePointers.current.values());
+      archivePinchStart.current = { distance: pointerDistance(a, b), zoom: archiveZoom };
+      archiveDrag.current = null;
+    }
+  }
+
+  function onArchiveFloorPointerMove(event: PointerEvent<HTMLDivElement>) {
+    if (archivePointers.current.has(event.pointerId)) {
+      archivePointers.current.set(event.pointerId, { x: event.clientX, y: event.clientY });
+    }
+    if (archivePointers.current.size === 2 && archivePinchStart.current) {
+      const [a, b] = Array.from(archivePointers.current.values());
+      const ratio = pointerDistance(a, b) / archivePinchStart.current.distance;
+      setArchiveZoom(clampZoom(archivePinchStart.current.zoom * ratio));
+    }
+  }
+
+  function onArchiveFloorPointerUp(event: PointerEvent<HTMLDivElement>) {
+    archivePointers.current.delete(event.pointerId);
+    if (archivePointers.current.size < 2) archivePinchStart.current = null;
+  }
+
+  function onArchiveWheel(event: WheelEvent) {
+    event.preventDefault();
+    const direction = event.deltaY > 0 ? -1 : 1;
+    setArchiveZoom((value) => clampZoom(value + direction * 0.06));
+  }
+
+  // React's onWheel prop can end up bound as a passive listener on some
+  // browsers, which silently breaks preventDefault(). Bind natively instead.
+  useEffect(() => {
+    const node = gestureLayerRef.current;
+    if (!node) return;
+    node.addEventListener("wheel", onWheel, { passive: false });
+    return () => node.removeEventListener("wheel", onWheel);
+  });
+
+  useEffect(() => {
+    const node = archiveFloorRef.current;
+    if (!node) return;
+    node.addEventListener("wheel", onArchiveWheel, { passive: false });
+    return () => node.removeEventListener("wheel", onArchiveWheel);
+  });
 
   function onArchivePointerDown(event: PointerEvent<HTMLElement>, page: number) {
     const offset = archiveOffsets[page] ?? { x: 0, y: 0 };
@@ -391,13 +478,13 @@ export default function Home() {
         </div>
         <div className="rear-frame" aria-hidden="true" />
         <div
+          ref={gestureLayerRef}
           className="gesture-layer"
           aria-label="Drag sideways to rotate or downward to tear a page"
           onPointerDown={onPointerDown}
           onPointerMove={onPointerMove}
           onPointerUp={onPointerUp}
-          onPointerCancel={() => { pointerStart.current = null; }}
-          onWheel={onWheel}
+          onPointerCancel={onPointerCancel}
           onDoubleClick={() => nextDay()}
         />
         </section>
@@ -412,8 +499,16 @@ export default function Home() {
 
       <section className="archive-view" aria-hidden={!archiveOpen}>
         <button className="archive-back" type="button" onClick={() => setArchiveOpen(false)}>BACK TO CALENDAR</button>
-        <p className="archive-instruction">DRAG EACH PAGE SIDEWAYS</p>
-        <div className="archive-floor">
+        <p className="archive-instruction">DRAG EACH PAGE SIDEWAYS · PINCH OR SCROLL TO ZOOM</p>
+        <div
+          ref={archiveFloorRef}
+          className="archive-floor"
+          style={{ zoom: archiveZoom } as CSSProperties}
+          onPointerDown={onArchiveFloorPointerDown}
+          onPointerMove={onArchiveFloorPointerMove}
+          onPointerUp={onArchiveFloorPointerUp}
+          onPointerCancel={onArchiveFloorPointerUp}
+        >
           {archivePages.map((pageIndex, order) => {
             const date = dates[pageIndex];
             const photo = photos[dateKey(date)];
