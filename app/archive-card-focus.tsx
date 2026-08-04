@@ -31,97 +31,87 @@ const styles = `
 .archive-card-focus-overlay.is-visible .archive-card-focus-card{transform:scale(1)}
 .archive-card-focus-sheet{
   position:relative;
-  display:grid;
-  grid-template-rows:42% auto 1fr;
+  display:flex;
+  flex-direction:column;
   width:100%;
-  aspect-ratio:382/405!important;
-  min-height:0;
+  aspect-ratio:382/405;
   overflow:hidden;
-  padding:14px 14px 12px!important;
+  box-sizing:border-box;
+  padding:18px 18px 14px;
   background:#f7f6f8;
   color:#25252a;
   cursor:default;
   user-select:none;
   pointer-events:none;
-  box-shadow:none;
 }
-.archive-card-focus-sheet::before,
-.archive-card-focus-sheet::after,
-.archive-card-focus-sheet .archive-date::before,
-.archive-card-focus-sheet .archive-date::after,
-.archive-card-focus-sheet .archive-photo::before,
-.archive-card-focus-sheet .archive-photo::after,
-.archive-card-focus-sheet .archive-footer::before,
-.archive-card-focus-sheet .archive-footer::after{
-  content:none!important;
-  display:none!important;
-}
-.archive-card-focus-sheet .archive-date{
+.archive-card-focus-date{
   display:flex;
-  min-height:0;
+  flex:0 0 auto;
   flex-direction:column;
   align-items:center;
-  justify-content:flex-end;
-  padding:0 0 6px;
+  justify-content:center;
+  width:100%;
+  margin:0;
+  padding:0;
   color:#25252a;
   text-align:center;
-  overflow:visible;
 }
-.archive-card-focus-sheet .archive-date span{
+.archive-card-focus-date span{
   display:block;
-  font-size:clamp(46px,10.5vw,64px);
+  margin:0;
+  padding:0;
+  font-size:clamp(42px,9.6vw,58px);
+  font-weight:400;
   line-height:.9;
   letter-spacing:-.04em;
   white-space:nowrap;
 }
-.archive-card-focus-sheet .archive-date strong{
+.archive-card-focus-date strong{
   display:block;
-  margin-top:2px;
-  font-size:clamp(86px,17.2vw,114px);
+  margin:3px 0 0;
+  padding:0;
+  font-size:clamp(78px,15.8vw,104px);
   font-weight:400;
   line-height:.84;
   letter-spacing:-.055em;
   white-space:nowrap;
 }
-.archive-card-focus-sheet .archive-photo{
+.archive-card-focus-photo{
   position:relative;
+  flex:0 0 auto;
   width:100%;
   aspect-ratio:2250/906;
-  min-height:0;
+  margin-top:10px;
   overflow:hidden;
   background:#f7f6f8;
-  border:0;
-  outline:0;
-  box-shadow:none;
 }
-.archive-card-focus-sheet .archive-photo img{
+.archive-card-focus-photo img{
   display:block;
   width:100%;
   height:100%;
   margin:0;
-  border:0;
-  outline:0;
   object-fit:cover;
   visibility:visible!important;
   opacity:1!important;
 }
-.archive-card-focus-sheet .archive-footer{
+.archive-card-focus-footer{
   display:flex;
-  min-height:0;
-  align-items:flex-start;
+  flex:1 1 auto;
+  align-items:flex-end;
   justify-content:space-between;
   gap:8px;
-  padding-top:8px;
+  min-height:0;
+  padding-top:10px;
   color:#3c3c42;
   font:7px/1.2 Arial,sans-serif;
   letter-spacing:.07em;
 }
-.archive-card-focus-sheet .archive-footer div{
+.archive-card-focus-footer div{
   display:flex;
   max-width:68%;
   flex-direction:column;
 }
-.archive-card-focus-sheet .archive-footer b{text-transform:uppercase}
+.archive-card-focus-footer b{text-transform:uppercase}
 .archive-card-focus-close{
   position:fixed;
   z-index:2;
@@ -143,16 +133,12 @@ body.archive-card-focus-open{overflow:hidden}
 @media(max-width:640px){
   .archive-card-focus-overlay{padding:12px}
   .archive-card-focus-card{width:min(96.8vw,396px);max-width:calc(100vw - 24px)}
-  .archive-card-focus-sheet{
-    padding:12px 12px 10px!important;
-    grid-template-rows:42% auto 1fr;
-    aspect-ratio:382/405!important;
-  }
+  .archive-card-focus-sheet{padding:14px 14px 12px}
   .archive-card-focus-close{top:max(10px,env(safe-area-inset-top));right:10px;font-size:34px}
-  .archive-card-focus-sheet .archive-date{padding:0 0 5px}
-  .archive-card-focus-sheet .archive-date span{font-size:clamp(41px,11.2vw,56px)}
-  .archive-card-focus-sheet .archive-date strong{font-size:clamp(76px,18.8vw,100px)}
-  .archive-card-focus-sheet .archive-footer{font-size:6px;padding-top:7px}
+  .archive-card-focus-date span{font-size:clamp(37px,10.3vw,50px)}
+  .archive-card-focus-date strong{font-size:clamp(69px,17vw,92px)}
+  .archive-card-focus-photo{margin-top:8px}
+  .archive-card-focus-footer{font-size:6px;padding-top:8px}
 }
 `;
 
@@ -164,25 +150,73 @@ function resolveImageSource(sourceImage: HTMLImageElement | null) {
     || "";
 }
 
+function cleanText(value: string | null | undefined) {
+  return (value || "").replace(/\s+/g, " ").trim();
+}
+
 function buildFocusedSheet(page: HTMLElement) {
-  const sheet = page.cloneNode(true) as HTMLElement;
+  const sourceDate = page.querySelector<HTMLElement>(".archive-date");
+  const dateLines = Array.from(sourceDate?.querySelectorAll<HTMLElement>("span") || [])
+    .map((node) => cleanText(node.textContent))
+    .filter(Boolean);
+  const dayText = cleanText(sourceDate?.querySelector<HTMLElement>("strong")?.textContent);
+
+  const sourcePhoto = page.querySelector<HTMLImageElement>(".archive-photo img")
+    || page.querySelector<HTMLImageElement>("img");
+  const imageSource = resolveImageSource(sourcePhoto);
+
+  const sourceFooter = page.querySelector<HTMLElement>(".archive-footer");
+  const footerChildren = Array.from(sourceFooter?.children || []);
+
+  const sheet = document.createElement("section");
   sheet.className = "archive-card-focus-sheet";
-  sheet.removeAttribute("style");
 
-  const sourceImages = Array.from(page.querySelectorAll<HTMLImageElement>("img"));
-  const clonedImages = Array.from(sheet.querySelectorAll<HTMLImageElement>("img"));
-  clonedImages.forEach((image, index) => {
-    const resolved = resolveImageSource(sourceImages[index] ?? null)
-      || image.getAttribute("src")
-      || image.dataset.archiveSource
-      || "";
-    if (resolved) image.setAttribute("src", resolved);
-    image.style.removeProperty("visibility");
-    image.style.removeProperty("display");
-    image.removeAttribute("loading");
-    image.setAttribute("decoding", "async");
+  const date = document.createElement("header");
+  date.className = "archive-card-focus-date";
+  dateLines.slice(0, 2).forEach((line) => {
+    const span = document.createElement("span");
+    span.textContent = line;
+    date.appendChild(span);
   });
+  const strong = document.createElement("strong");
+  strong.textContent = dayText;
+  date.appendChild(strong);
 
+  const photo = document.createElement("div");
+  photo.className = "archive-card-focus-photo";
+  const image = document.createElement("img");
+  image.alt = sourcePhoto?.alt || "";
+  image.decoding = "async";
+  if (imageSource) image.src = imageSource;
+  photo.appendChild(image);
+
+  const footer = document.createElement("footer");
+  footer.className = "archive-card-focus-footer";
+  if (footerChildren.length) {
+    footerChildren.slice(0, 2).forEach((child) => {
+      const block = document.createElement("div");
+      Array.from(child.children).forEach((line) => {
+        const tag = line.tagName.toLowerCase() === "b" ? "b" : "span";
+        const clonedLine = document.createElement(tag);
+        clonedLine.textContent = cleanText(line.textContent);
+        block.appendChild(clonedLine);
+      });
+      if (!block.childElementCount) {
+        const span = document.createElement("span");
+        span.textContent = cleanText(child.textContent);
+        block.appendChild(span);
+      }
+      footer.appendChild(block);
+    });
+  } else if (sourceFooter) {
+    const block = document.createElement("div");
+    const span = document.createElement("span");
+    span.textContent = cleanText(sourceFooter.textContent);
+    block.appendChild(span);
+    footer.appendChild(block);
+  }
+
+  sheet.append(date, photo, footer);
   return sheet;
 }
 
