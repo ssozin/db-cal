@@ -975,7 +975,7 @@ export default function Home() {
       </div>
 
       {tornCount > 0 && (
-        <button className="floor-pile-trigger" type="button" aria-label={`View ${tornCount} torn calendar pages`} onClick={() => setArchiveOpen(true)}>
+        <button className="floor-pile-trigger" type="button" aria-label={`View ${tornCount} torn calendar pages`} onClick={() => { unlockTearAudio(); setArchiveOpen(true); }}>
           <i /><i /><i />
           <span>TORN PAGES · {tornCount}</span>
         </button>
