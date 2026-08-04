@@ -32,7 +32,7 @@ const styles = `
 .archive-card-focus-sheet{
   position:relative;
   display:grid;
-  grid-template-rows:46% auto 1fr;
+  grid-template-rows:50% auto 1fr;
   width:100%;
   aspect-ratio:382/430!important;
   min-height:0;
@@ -61,8 +61,8 @@ const styles = `
   min-height:0;
   flex-direction:column;
   align-items:center;
-  justify-content:center;
-  padding:0 0 4px;
+  justify-content:flex-start;
+  padding:24px 0 2px;
   color:#25252a;
   text-align:center;
 }
@@ -140,8 +140,9 @@ body.archive-card-focus-open{overflow:hidden}
 @media(max-width:640px){
   .archive-card-focus-overlay{padding:12px}
   .archive-card-focus-card{width:min(96.8vw,396px);max-width:calc(100vw - 24px)}
-  .archive-card-focus-sheet{padding:8px 12px 8px!important}
+  .archive-card-focus-sheet{padding:8px 12px 8px!important;grid-template-rows:50% auto 1fr}
   .archive-card-focus-close{top:max(10px,env(safe-area-inset-top));right:10px;font-size:34px}
+  .archive-card-focus-sheet .archive-date{padding-top:20px}
   .archive-card-focus-sheet .archive-date span{font-size:clamp(37px,10.3vw,50px)}
   .archive-card-focus-sheet .archive-date strong{font-size:clamp(70px,16.8vw,91px)}
   .archive-card-focus-sheet .archive-footer{font-size:6px;padding-top:5px}
