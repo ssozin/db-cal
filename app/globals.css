@@ -233,15 +233,6 @@ button{font:inherit}
   .date-block strong{font-size:clamp(66px,17vw,76px);line-height:.88}
   .paper-footer{flex:0 0 auto;min-height:52px;padding-top:8px;padding-bottom:8px;font-size:8px}
   .archive-mode .calendar-zoom-wrap{transform:scale(1.45) translateY(-8vh)}
-  /* scale(.8) shrinks box-shadow; boost cast/tear depth so fallen-page depth still reads. */
-  .paper-cast-shadow{
-    box-shadow:
-      calc(3px * 1.25) calc(var(--front-shadow-y) * 1.25) calc(var(--front-shadow-blur) * 1.25) rgba(18,18,22,.24);
-  }
-  .calendar-depth-shadow{
-    height:calc(var(--tear-shadow-depth) * 1.15);
-    filter:blur(calc(var(--tear-shadow-blur) * 1.1));
-  }
 }
 .archive-mode .floor-pile-trigger{opacity:0;pointer-events:none}
 .archive-view{position:fixed;z-index:30;inset:0;visibility:hidden;overflow:hidden;background:radial-gradient(circle at 42% 34%,#fafaf9,#e8e8e6 74%,#dededb);opacity:0;transform:scale(1.18);transition:visibility 0s linear .65s,opacity .48s ease,transform .72s cubic-bezier(.22,.75,.22,1);pointer-events:none}
