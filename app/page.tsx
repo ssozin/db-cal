@@ -402,6 +402,7 @@ export default function Home() {
   const [jumping, setJumping] = useState(false);
   const [finished, setFinished] = useState(false);
   const [rotation, setRotation] = useState(0);
+  const [selfRighting, setSelfRighting] = useState(false);
   const [zoom, setZoom] = useState(1);
   const [archiveZoom, setArchiveZoom] = useState(1);
   const [captureFlash, setCaptureFlash] = useState(false);
@@ -420,6 +421,9 @@ export default function Home() {
   // Depth visuals lag the page index so tear/jump animations never snap the shadow.
   const [depthIndex, setDepthIndex] = useState(() => todayIndex(dates));
   const pointerStart = useRef<{ x: number; y: number; rotation: number } | null>(null);
+  const rotationRef = useRef(0);
+  const selfRightTimer = useRef<number | null>(null);
+  const selfRightAnimTimer = useRef<number | null>(null);
   const archiveDrag = useRef<{ page: number; x: number; y: number; offsetX: number; offsetY: number } | null>(null);
   // Two-finger pinch tracking for the main calendar and, separately, the archive floor.
   const activePointers = useRef<Map<number, { x: number; y: number }>>(new Map());
@@ -437,11 +441,16 @@ export default function Home() {
   const nextPhoto = photos[dateKey(next)];
 
   useEffect(() => { photosRef.current = photos; }, [photos]);
+  useEffect(() => { rotationRef.current = rotation; }, [rotation]);
   useEffect(() => () => Object.values(photosRef.current).forEach((photo) => {
     if (photo.url.startsWith("blob:")) URL.revokeObjectURL(photo.url);
   }), []);
   useEffect(() => () => {
     if (capturePreviewUrlRef.current) URL.revokeObjectURL(capturePreviewUrlRef.current);
+  }, []);
+  useEffect(() => () => {
+    if (selfRightTimer.current != null) window.clearTimeout(selfRightTimer.current);
+    if (selfRightAnimTimer.current != null) window.clearTimeout(selfRightAnimTimer.current);
   }, []);
 
   // Mobile Safari blocks Web Audio until a gesture runs unlock (silent buffer).
@@ -541,8 +550,43 @@ export default function Home() {
     setIndex((value) => Math.max(0, value - 1));
   }
 
+  function clearSelfRightTimers() {
+    if (selfRightTimer.current != null) {
+      window.clearTimeout(selfRightTimer.current);
+      selfRightTimer.current = null;
+    }
+    if (selfRightAnimTimer.current != null) {
+      window.clearTimeout(selfRightAnimTimer.current);
+      selfRightAnimTimer.current = null;
+    }
+    setSelfRighting(false);
+  }
+
+  /** After the user leaves the pad tilted, wait 2s then spring back upright. */
+  function scheduleSelfRight() {
+    clearSelfRightTimers();
+    if (Math.abs(rotationRef.current) < 1) {
+      if (rotationRef.current !== 0) {
+        rotationRef.current = 0;
+        setRotation(0);
+      }
+      return;
+    }
+    selfRightTimer.current = window.setTimeout(() => {
+      selfRightTimer.current = null;
+      setSelfRighting(true);
+      rotationRef.current = 0;
+      setRotation(0);
+      selfRightAnimTimer.current = window.setTimeout(() => {
+        selfRightAnimTimer.current = null;
+        setSelfRighting(false);
+      }, 720);
+    }, 2000);
+  }
+
   function onPointerDown(event: PointerEvent<HTMLDivElement>) {
     unlockTearAudio();
+    clearSelfRightTimers();
     activePointers.current.set(event.pointerId, { x: event.clientX, y: event.clientY });
     if (activePointers.current.size === 2) {
       const [a, b] = Array.from(activePointers.current.values());
@@ -551,7 +595,7 @@ export default function Home() {
       return;
     }
     if (falling || jumping) return;
-    pointerStart.current = { x: event.clientX, y: event.clientY, rotation };
+    pointerStart.current = { x: event.clientX, y: event.clientY, rotation: rotationRef.current };
     event.currentTarget.setPointerCapture(event.pointerId);
   }
 
@@ -569,7 +613,9 @@ export default function Home() {
     const dx = event.clientX - pointerStart.current.x;
     const dy = event.clientY - pointerStart.current.y;
     if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 5) {
-      setRotation(Math.max(-55, Math.min(55, pointerStart.current.rotation + dx * 0.24)));
+      const next = Math.max(-55, Math.min(55, pointerStart.current.rotation + dx * 0.24));
+      rotationRef.current = next;
+      setRotation(next);
     }
   }
 
@@ -585,12 +631,15 @@ export default function Home() {
       }
     }
     pointerStart.current = null;
+    // Still touching with another finger (pinch) — wait until the gesture fully ends.
+    if (activePointers.current.size === 0) scheduleSelfRight();
   }
 
   function onPointerCancel(event: PointerEvent<HTMLDivElement>) {
     activePointers.current.delete(event.pointerId);
     if (activePointers.current.size < 2) pinchStart.current = null;
     pointerStart.current = null;
+    if (activePointers.current.size === 0) scheduleSelfRight();
   }
 
   function onWheel(event: WheelEvent) {
@@ -853,7 +902,7 @@ export default function Home() {
           <p className="notice">Online Daily Tear-Off Calendar · {photoCount ?? "—"} Photos</p>
         </div>
         <div className="toolbar-actions">
-          <button className={index === 0 && !finished ? "is-selected" : undefined} aria-pressed={index === 0 && !finished} type="button" onClick={() => { setDatePickerOpen(false); jumpTo(0); setRotation(0); }}>START</button>
+          <button className={index === 0 && !finished ? "is-selected" : undefined} aria-pressed={index === 0 && !finished} type="button" onClick={() => { setDatePickerOpen(false); clearSelfRightTimers(); rotationRef.current = 0; jumpTo(0); setRotation(0); }}>START</button>
           <button className={index === todayIndex(dates) && !finished ? "is-selected" : undefined} aria-pressed={index === todayIndex(dates) && !finished} type="button" onClick={() => { setDatePickerOpen(false); jumpTo(todayIndex(dates)); }}>TODAY</button>
           <button className={datePickerOpen || (index !== 0 && index !== todayIndex(dates) && !finished) ? "is-selected" : undefined} aria-pressed={datePickerOpen} type="button" onClick={() => { setPickerMonth(current.getMonth()); setDatePickerOpen((open) => !open); }}>DATE</button>
         </div>
@@ -869,7 +918,7 @@ export default function Home() {
           <div className="date-picker-weekdays">{["S","M","T","W","T","F","S"].map((day, i) => <span key={`${day}-${i}`}>{day}</span>)}</div>
           <div className="date-picker-grid">
             {pickerCells.map((date, cell) => date ? (
-              <button className={pickerDayClass(date)} key={dateKey(date)} type="button" onClick={() => { setDatePickerOpen(false); setRotation(0); jumpTo(dates.findIndex((item) => dateKey(item) === dateKey(date))); }}>{date.getDate()}</button>
+              <button className={pickerDayClass(date)} key={dateKey(date)} type="button" onClick={() => { setDatePickerOpen(false); clearSelfRightTimers(); rotationRef.current = 0; setRotation(0); jumpTo(dates.findIndex((item) => dateKey(item) === dateKey(date))); }}>{date.getDate()}</button>
             ) : <span key={`empty-${cell}`} />)}
           </div>
         </section>
@@ -877,7 +926,7 @@ export default function Home() {
 
       <div className="calendar-zoom-wrap">
         <section
-          className={`calendar-shell${finished ? " is-finished" : ""}`}
+          className={`calendar-shell${finished ? " is-finished" : ""}${selfRighting ? " is-self-righting" : ""}`}
           aria-label="2026 tear-off calendar"
           style={{
           // A perfectly flat rotateY(0deg) collapses to an identity matrix on

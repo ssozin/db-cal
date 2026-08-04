@@ -60,6 +60,7 @@ button{font:inherit}
 .calendar-depth-shadow{top:0;height:var(--tear-shadow-depth);background:linear-gradient(180deg,rgba(27,26,30,.3) 0,rgba(37,36,41,.16) 34%,rgba(52,51,57,.07) 68%,transparent 100%);filter:blur(var(--tear-shadow-blur))}
 .calendar-depth-shadow:before{content:"";position:absolute;z-index:1;top:0;right:0;left:0;height:1px;background:radial-gradient(ellipse at center,rgba(102,101,107,.62) 0 40%,transparent 48%) 0 0/5px 1px repeat-x;filter:none}
 .calendar-shell{transform-origin:50% 50%;transition:transform .16s ease-out}
+.calendar-shell.is-self-righting{transition:transform .68s cubic-bezier(.22,1.45,.36,1)}
 .paper-stack:before{border-bottom:0}
 .calendar-depth-shadow{transform:translateZ(.01px);backface-visibility:hidden;transition:height 1.06s cubic-bezier(.3,.04,.62,1),filter 1.06s ease,opacity .2s ease;will-change:height,filter}
 .paper-current.is-falling{animation:tearRelease .82s cubic-bezier(.46,.01,.72,.4) forwards;clip-path:polygon(0 1px,8% 0,18% 1px,29% 0,41% 2px,53% 0,65% 1px,77% 0,89% 1px,100% 0,100% 100%,0 100%)}
