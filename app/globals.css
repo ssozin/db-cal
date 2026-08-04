@@ -242,6 +242,19 @@ button{font:inherit}
 .capture-flash{position:fixed;z-index:3000;inset:0;background:#fff;opacity:0;pointer-events:none}
 .capture-flash.is-flashing{animation:captureShutter .26s ease-out}
 @keyframes captureShutter{0%{opacity:0}12%{opacity:.92}100%{opacity:0}}
+/* Mobile-only main calendar capture — desktop keeps the side toolbar clean. */
+.calendar-capture{display:none}
+@media(max-width:640px){
+  .calendar-capture{position:fixed;z-index:25;top:14px;right:14px;display:grid;width:36px;height:36px;place-items:center;border:1px solid rgba(0,0,0,.2);border-radius:999px;background:rgba(255,255,255,.82);color:#242428;padding:0;cursor:pointer;backdrop-filter:blur(10px);transition:transform .15s ease,opacity .15s ease,background .15s ease,color .15s ease}
+  .calendar-capture:hover:not(:disabled),.calendar-capture:active:not(:disabled){background:#1f1f22;color:#fff}
+  .calendar-capture:active:not(:disabled){transform:scale(.92)}
+  .calendar-capture:disabled{opacity:.45;cursor:default}
+  .archive-mode .calendar-capture{visibility:hidden;opacity:0;pointer-events:none}
+}
+body.is-capturing-calendar .toolbar,
+body.is-capturing-calendar .floor-pile-trigger,
+body.is-capturing-calendar .calendar-capture,
+body.is-capturing-calendar .date-picker{visibility:hidden;opacity:0;pointer-events:none}
 /* Hide chrome while rasterizing so the saved image is just the card layout. */
 .archive-view.is-capturing .archive-toolbar,
 .archive-view.is-capturing .archive-instruction{visibility:hidden;opacity:0}
