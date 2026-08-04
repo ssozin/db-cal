@@ -124,7 +124,7 @@ button{font:inherit}
 /* The single sheet on top (current + falling) stays flat/static — depth is
    shown only by the binder-groove shadow (.calendar-depth-shadow) above, so
    the torn sheet itself never flashes a shadow change on tear/swap. */
-.paper-current{box-shadow:2px 2px 3px rgba(0,0,0,.1)}
+.paper-current{box-shadow:none}
 .ring{box-shadow:inset 1px 1px 1px rgba(255,255,255,.5),inset -2px -2px 2px rgba(32,34,38,.3),2px 2px 2px rgba(0,0,0,.34)}
 .board-back{box-shadow:5px 12px 18px rgba(0,0,0,.24)}
 .ring:before{content:"";position:absolute;z-index:3;top:5px;left:6px;display:block;width:9px;height:2px;transform:translateZ(3.6px) rotate(-28deg);border:0;border-radius:999px;background:linear-gradient(90deg,transparent 0%,rgba(255,255,255,.28) 15%,#fff 48%,rgba(255,255,255,.45) 70%,transparent 100%);box-shadow:0 0 1px rgba(255,255,255,.4);filter:none;pointer-events:none}
