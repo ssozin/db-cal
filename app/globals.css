@@ -276,9 +276,12 @@ button{font:inherit}
 @media(max-width:640px){.date-picker{top:50%;left:50%;width:min(82vw,280px);transform:translate(-50%,-50%);padding:18px}.date-picker-grid button{font-size:10px}}
 
 /* Keep the torn-page field inside the viewport at every responsive width. */
-.archive-floor{--archive-card-width:clamp(180px,24vw,290px);--archive-edge:clamp(24px,4vw,56px)}
-.archive-page{left:clamp(var(--archive-edge),var(--archive-left),calc(100% - var(--archive-card-width) - var(--archive-edge)));width:var(--archive-card-width)}
-@media(max-width:640px){.archive-floor{--archive-card-width:min(42vw,170px);--archive-edge:14px}.archive-page{width:var(--archive-card-width)}}
+/* No clamping of position: cards should be free to scatter past every edge
+   (top/left/right/bottom) instead of being pulled back into view, which
+   previously bunched many cards against the right edge. */
+.archive-floor{--archive-card-width:clamp(180px,24vw,290px)}
+.archive-page{left:var(--archive-left);width:var(--archive-card-width)}
+@media(max-width:640px){.archive-floor{--archive-card-width:min(42vw,170px)}.archive-page{width:var(--archive-card-width)}}
 
 /* A single, continuous gravity arc replaces the previous alternating jolts. */
 .paper-current.is-falling{animation-timing-function:cubic-bezier(.3,.04,.62,1)}

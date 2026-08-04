@@ -583,8 +583,10 @@ export default function Home() {
             const date = dates[pageIndex];
             const photo = photos[dateKey(date)];
             const offset = archiveOffsets[pageIndex] ?? { x: 0, y: 0 };
-            const left = 6 + seeded(pageIndex + 11) * 88;
-            const top = 5 + seeded(pageIndex + 29) * 64;
+            // Wide enough to let cards drift past every edge of the screen —
+            // scattered, not corralled back into the visible frame.
+            const left = -16 + seeded(pageIndex + 11) * 116;
+            const top = -10 + seeded(pageIndex + 29) * 92;
             const rotate = -18 + seeded(pageIndex + 47) * 36;
             return (
               <article
