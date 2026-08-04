@@ -11,16 +11,10 @@ const styles = `
 .toolbar-actions .upload-button{position:relative!important;isolation:isolate}
 .toolbar-actions button.is-selected,
 .toolbar-actions .upload-button.is-selected{color:#242428!important;font-weight:700!important}
-.toolbar-actions button.is-selected:after,
-.toolbar-actions .upload-button.is-selected:after{display:none!important;content:none!important}
 .toolbar-actions button.is-selected:before,
-.toolbar-actions .upload-button.is-selected:before{
-  content:""!important;position:absolute!important;z-index:-1!important;
-  left:-4px!important;right:-4px!important;bottom:2px!important;top:auto!important;
-  width:auto!important;height:45%!important;border:0!important;border-radius:1px!important;
-  background:rgba(125,125,130,.3)!important;transform:rotate(-1deg)!important;
-  opacity:1!important;pointer-events:none!important
-}
+.toolbar-actions button.is-selected:after,
+.toolbar-actions .upload-button.is-selected:before,
+.toolbar-actions .upload-button.is-selected:after{display:none!important;content:none!important;background:none!important;box-shadow:none!important}
 .calendar-color-control{
   position:fixed;z-index:25;display:flex;align-items:center;gap:7px;
   padding:6px 8px;border:1px solid rgba(30,30,34,.14);border-radius:999px;
@@ -140,7 +134,6 @@ export default function CalendarVisualTuning() {
       const previousShadowOffsetY = this.shadowOffsetY;
       const previousFillStyle = this.fillStyle;
 
-      // Broad but close ambient shadow.
       this.shadowColor = "rgba(18,18,23,.15)";
       this.shadowBlur = 28;
       this.shadowOffsetX = previousShadowOffsetX * .35;
@@ -148,7 +141,6 @@ export default function CalendarVisualTuning() {
       this.fillStyle = "rgba(20,20,24,.012)";
       originalFillRect.call(this, x, y, width, height);
 
-      // Shorter contact shadow, matching the live calendar instead of a large halo.
       this.shadowColor = "rgba(18,18,23,.25)";
       this.shadowBlur = 11;
       this.shadowOffsetX = previousShadowOffsetX * .18;
