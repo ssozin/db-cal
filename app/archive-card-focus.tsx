@@ -22,7 +22,7 @@ const styles = `
 .archive-card-focus-overlay.is-visible{opacity:1}
 .archive-card-focus-card{
   position:relative;
-  width:min(82vw,420px);
+  width:min(90.2vw,462px);
   max-width:calc(100vw - 36px);
   transform:scale(.92);
   transition:transform .24s cubic-bezier(.2,.8,.2,1);
@@ -68,14 +68,14 @@ const styles = `
 }
 .archive-card-focus-sheet .archive-date span{
   display:block;
-  font-size:clamp(34px,8vw,48px);
+  font-size:clamp(41px,9.6vw,58px);
   line-height:.9;
   letter-spacing:-.04em;
 }
 .archive-card-focus-sheet .archive-date strong{
   display:block;
   margin-top:0;
-  font-size:clamp(64px,13vw,84px);
+  font-size:clamp(77px,15.6vw,101px);
   font-weight:400;
   line-height:.84;
   letter-spacing:-.055em;
@@ -139,11 +139,11 @@ const styles = `
 body.archive-card-focus-open{overflow:hidden}
 @media(max-width:640px){
   .archive-card-focus-overlay{padding:12px}
-  .archive-card-focus-card{width:min(88vw,360px);max-width:calc(100vw - 24px)}
+  .archive-card-focus-card{width:min(96.8vw,396px);max-width:calc(100vw - 24px)}
   .archive-card-focus-sheet{padding:8px 12px 8px!important}
   .archive-card-focus-close{top:max(10px,env(safe-area-inset-top));right:10px;font-size:34px}
-  .archive-card-focus-sheet .archive-date span{font-size:clamp(31px,8.6vw,42px)}
-  .archive-card-focus-sheet .archive-date strong{font-size:clamp(58px,14vw,76px)}
+  .archive-card-focus-sheet .archive-date span{font-size:clamp(37px,10.3vw,50px)}
+  .archive-card-focus-sheet .archive-date strong{font-size:clamp(70px,16.8vw,91px)}
   .archive-card-focus-sheet .archive-footer{font-size:6px;padding-top:5px}
 }
 `;
