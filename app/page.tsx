@@ -81,6 +81,10 @@ export default function Home() {
   const [archiveOpen, setArchiveOpen] = useState(false);
   const [archiveOffsets, setArchiveOffsets] = useState<Record<number, { x: number; y: number }>>({});
   const [activeArchivePage, setActiveArchivePage] = useState<number | null>(null);
+  // Persists which page was picked up last so it stays stacked on top even
+  // after it's dropped, instead of falling back under later pages.
+  const [archiveZIndices, setArchiveZIndices] = useState<Record<number, number>>({});
+  const archiveZCounter = useRef(1000);
   const [datePickerOpen, setDatePickerOpen] = useState(false);
   const [pickerMonth, setPickerMonth] = useState(() => dates[todayIndex(dates)].getMonth());
   // Depth visuals lag the page index so tear/jump animations never snap the shadow.
@@ -220,6 +224,8 @@ export default function Home() {
     const offset = archiveOffsets[page] ?? { x: 0, y: 0 };
     archiveDrag.current = { page, x: event.clientX, y: event.clientY, offsetX: offset.x, offsetY: offset.y };
     setActiveArchivePage(page);
+    archiveZCounter.current += 1;
+    setArchiveZIndices((existing) => ({ ...existing, [page]: archiveZCounter.current }));
     event.currentTarget.setPointerCapture(event.pointerId);
   }
 
@@ -422,7 +428,7 @@ export default function Home() {
                 key={pageIndex}
                 style={{
                   top: `${top}%`,
-                  zIndex: activeArchivePage === pageIndex ? 1000 : order + 1,
+                  zIndex: archiveZIndices[pageIndex] ?? order + 1,
                   "--archive-left": `${left}%`,
                   "--archive-x": `${offset.x}px`,
                   "--archive-y": `${offset.y}px`,
