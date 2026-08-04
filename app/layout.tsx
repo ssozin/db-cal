@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Starter Project",
-  description: "A clean starting point for building your site.",
+  title: "DOUBLE FEATURE",
+  description: "Online Daily Tear-Off Calendar",
   other: {
     "codex-preview": "development",
   },
