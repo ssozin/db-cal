@@ -195,8 +195,7 @@ button{font:inherit}
   .paper-footer{min-height:39px;padding-top:7px;padding-bottom:6px;font-size:6.5px}
   .floor-pile-trigger{bottom:8px;transform:translateX(-50%) scale(.92)}
   .archive-floor{inset:64px 0 0}
-  .archive-page{width:154px;padding:8px}
-  .archive-date{height:44%}
+  .archive-page{width:154px;padding:8px 8px 8px}
   .archive-date span{font-size:19px}.archive-date strong{font-size:33px}
   .archive-toolbar{top:14px;left:14px}
 }
@@ -247,12 +246,16 @@ button{font:inherit}
 .toolbar-actions .capture-button:hover:not(:disabled){background:#1f1f22;color:#fff;opacity:1}
 .toolbar-actions .capture-button:disabled{opacity:.5;cursor:default}
 .toolbar-actions .capture-button:before{content:none}
-.archive-page{position:absolute;display:flex;flex-direction:column;width:clamp(180px,24vw,290px);aspect-ratio:.88;transform:translate(var(--archive-x),var(--archive-y)) rotate(var(--archive-rotate));transform-origin:center;overflow:hidden;background:#f7f6f8;padding:12px;box-shadow:7px 12px 22px rgba(22,22,27,.19);touch-action:none;user-select:none;cursor:grab;transition:box-shadow .18s ease}
+.archive-page{position:absolute;display:flex;flex-direction:column;width:clamp(180px,24vw,290px);aspect-ratio:.88;transform:translate(var(--archive-x),var(--archive-y)) rotate(var(--archive-rotate));transform-origin:center;overflow:hidden;background:#f7f6f8;padding:12px 12px 10px;box-shadow:7px 12px 22px rgba(22,22,27,.19);touch-action:none;user-select:none;cursor:grab;transition:box-shadow .18s ease}
 .archive-page.is-active{cursor:grabbing;box-shadow:14px 22px 34px rgba(22,22,27,.25)}
-.archive-date{display:flex;height:44%;flex-direction:column;align-items:center;justify-content:center;color:#25252a;text-align:center}.archive-date span{font-size:clamp(21px,3vw,34px);line-height:.9;letter-spacing:-.025em}.archive-date strong{margin-top:3px;font-size:clamp(34px,5vw,54px);font-weight:400;line-height:.9}
-.archive-photo{position:relative;width:100%;aspect-ratio:2250/906;overflow:hidden;background:#18211e;border:0;outline:0;box-shadow:none}.archive-photo img{display:block;width:calc(100% + 2px);height:calc(100% + 2px);margin:-1px;border:0;outline:0;box-shadow:none;object-fit:cover;pointer-events:none}
-.archive-footer{display:flex;align-items:flex-end;justify-content:space-between;gap:8px;margin-top:auto;padding-top:8px;color:#3c3c42;font:6px/1.25 Arial,sans-serif;letter-spacing:.07em}.archive-footer div{display:flex;max-width:68%;flex-direction:column}.archive-footer b{text-transform:uppercase}
-@media(max-width:640px){.archive-page{width:170px;padding:9px}.archive-date{height:45%}.archive-floor{inset-top:66px}.archive-instruction{display:none}.floor-pile-trigger{bottom:10px}.archive-toolbar{top:14px;left:14px}.archive-back,.archive-capture{width:36px;height:36px}}
+/* Extra vertical room lives in the date block so photo→footer and footer→edge
+   stay the same fixed gap (10px), with the text sitting a touch higher. */
+.archive-date{display:flex;flex:1 1 auto;height:auto;min-height:0;flex-direction:column;align-items:center;justify-content:center;color:#25252a;text-align:center}.archive-date span{font-size:clamp(21px,3vw,34px);line-height:.9;letter-spacing:-.025em}.archive-date strong{margin-top:3px;font-size:clamp(34px,5vw,54px);font-weight:400;line-height:.9}
+/* Transparent bg + full bleed img: the dark #18211e fill was reading as a
+   1px black hairline around the photo on mobile. */
+.archive-photo{position:relative;width:100%;aspect-ratio:2250/906;overflow:hidden;background:transparent;border:0;outline:0;box-shadow:none}.archive-photo img{display:block;width:calc(100% + 2px);height:calc(100% + 2px);margin:-1px;border:0;outline:0;box-shadow:none;object-fit:cover;pointer-events:none}
+.archive-footer{display:flex;align-items:flex-end;justify-content:space-between;gap:8px;margin-top:10px;padding-top:0;color:#3c3c42;font:6px/1.25 Arial,sans-serif;letter-spacing:.07em}.archive-footer div{display:flex;max-width:68%;flex-direction:column}.archive-footer b{text-transform:uppercase}
+@media(max-width:640px){.archive-page{width:170px;padding:9px 9px 9px}.archive-footer{margin-top:9px}.archive-floor{inset-top:66px}.archive-instruction{display:none}.floor-pile-trigger{bottom:10px}.archive-toolbar{top:14px;left:14px}.archive-back,.archive-capture{width:36px;height:36px}}
 .paper-footer div:first-child{align-items:flex-start;text-align:left}
 .paper-footer div:first-child span,.paper-footer div:first-child b{display:block;width:100%;text-align:left}
 .day-count{position:relative;top:2px;align-self:flex-end}
