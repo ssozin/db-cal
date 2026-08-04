@@ -3,20 +3,27 @@
   display: none !important;
 }
 
-.toolbar-actions > button,
-.toolbar-actions > button.is-selected {
+html body .toolbar-actions > button,
+html body .toolbar-actions > button.is-selected {
+  -webkit-appearance: none !important;
+  appearance: none !important;
   position: relative !important;
   display: inline-flex !important;
   align-items: center !important;
   justify-content: center !important;
-  width: 28px !important;
-  min-width: 28px !important;
-  height: 28px !important;
+  flex: 0 0 30px !important;
+  width: 30px !important;
+  min-width: 30px !important;
+  max-width: 30px !important;
+  height: 30px !important;
   padding: 0 !important;
   margin: 0 !important;
   border: 0 !important;
   border-radius: 0 !important;
-  background: transparent !important;
+  outline: 0 !important;
+  background: none !important;
+  background-color: transparent !important;
+  background-image: none !important;
   box-shadow: none !important;
   overflow: visible !important;
   color: #a3a3a3 !important;
@@ -25,19 +32,30 @@
   opacity: 1 !important;
 }
 
-.toolbar-actions > button::before {
+html body .toolbar-actions > button::before {
   content: none !important;
   display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+  border: 0 !important;
+  background: none !important;
+  box-shadow: none !important;
 }
 
 html body .toolbar-actions > button::after {
   position: static !important;
+  inset: auto !important;
   display: inline-block !important;
   width: auto !important;
+  min-width: 0 !important;
   height: auto !important;
+  padding: 0 !important;
+  margin: 0 !important;
   border: 0 !important;
   border-radius: 0 !important;
-  background: transparent !important;
+  background: none !important;
+  background-color: transparent !important;
+  background-image: none !important;
   box-shadow: none !important;
   transform: none !important;
   opacity: 1 !important;
