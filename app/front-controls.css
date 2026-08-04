@@ -5,13 +5,17 @@
 
 @media (min-width: 769px) {
   html body .toolbar-actions {
-    position: relative !important;
+    position: fixed !important;
+    left: 28px !important;
+    top: 50% !important;
+    z-index: 30 !important;
     display: flex !important;
     flex-direction: column !important;
     align-items: flex-start !important;
     justify-content: center !important;
     gap: 0 !important;
     padding: 0 !important;
+    transform: translateY(-50%) !important;
   }
 
   html body .toolbar-actions::before {
