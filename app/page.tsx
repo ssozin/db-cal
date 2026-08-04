@@ -1,7 +1,7 @@
 "use client";
 
 import { CSSProperties, PointerEvent, useEffect, useMemo, useRef, useState } from "react";
-import { toBlob as htmlToImageToBlob } from "html-to-image";
+import { toBlob as htmlToImageToBlob, toCanvas as htmlToImageToCanvas } from "html-to-image";
 
 type PhotoMap = Record<string, { url: string; name: string; event: string; sourceDate: string }>;
 
@@ -130,7 +130,6 @@ export default function Home() {
   const gestureLayerRef = useRef<HTMLDivElement | null>(null);
   const archiveViewRef = useRef<HTMLElement | null>(null);
   const archiveFloorRef = useRef<HTMLDivElement | null>(null);
-  const calendarCaptureRef = useRef<HTMLDivElement | null>(null);
   const photosRef = useRef<PhotoMap>({});
   const capturePreviewUrlRef = useRef<string | null>(null);
   const current = dates[index];
@@ -419,6 +418,45 @@ export default function Home() {
     closeCapturePreview();
   }
 
+  async function rasterizeElement(node: HTMLElement) {
+    const mobile = isMobileCaptureTarget();
+    const options = {
+      // cacheBust re-fetches every GitHub image and often fails CORS/timing on iOS.
+      cacheBust: false,
+      skipFonts: true,
+      pixelRatio: Math.min(mobile ? 1 : 2, window.devicePixelRatio || 1),
+      width: node.clientWidth,
+      height: node.clientHeight,
+      filter: (el: HTMLElement) => {
+        if (!(el instanceof HTMLElement)) return true;
+        if (
+          el.classList.contains("archive-toolbar")
+          || el.classList.contains("archive-instruction")
+          || el.classList.contains("capture-flash")
+          || el.classList.contains("capture-preview")
+        ) return false;
+        if (!el.classList.contains("archive-page")) return true;
+        const rect = el.getBoundingClientRect();
+        const visibleWidth = Math.max(0, Math.min(rect.right, window.innerWidth) - Math.max(rect.left, 0));
+        const visibleHeight = Math.max(0, Math.min(rect.bottom, window.innerHeight) - Math.max(rect.top, 0));
+        const area = rect.width * rect.height;
+        return area > 0 && (visibleWidth * visibleHeight) / area > 0.04;
+      },
+    };
+
+    try {
+      const blob = await htmlToImageToBlob(node, options);
+      if (blob && blob.size > 0) return blob;
+    } catch (error) {
+      console.warn("html-to-image toBlob failed, trying canvas", error);
+    }
+
+    const canvas = await htmlToImageToCanvas(node, options);
+    const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/png"));
+    if (!blob || blob.size === 0) throw new Error("Capture returned no image data");
+    return blob;
+  }
+
   async function captureArchive() {
     const node = archiveViewRef.current;
     if (!node || capturing || capturePreview) return;
@@ -427,59 +465,16 @@ export default function Home() {
     node.classList.add("is-capturing");
     window.setTimeout(() => setCaptureFlash(false), 260);
     try {
-      // Capture the on-screen archive view (UI chrome hidden via .is-capturing).
-      // Off-screen scattered cards are skipped so phones don't time out.
-      const blob = await htmlToImageToBlob(node, {
-        pixelRatio: Math.min(isMobileCaptureTarget() ? 1.25 : 2, window.devicePixelRatio || 1.5),
-        cacheBust: true,
-        skipFonts: true,
-        width: node.clientWidth,
-        height: node.clientHeight,
-        filter: (el) => {
-          if (!(el instanceof HTMLElement)) return true;
-          if (
-            el.classList.contains("archive-toolbar")
-            || el.classList.contains("archive-instruction")
-            || el.classList.contains("capture-flash")
-            || el.classList.contains("capture-preview")
-          ) return false;
-          if (!el.classList.contains("archive-page")) return true;
-          const rect = el.getBoundingClientRect();
-          const visibleWidth = Math.max(0, Math.min(rect.right, window.innerWidth) - Math.max(rect.left, 0));
-          const visibleHeight = Math.max(0, Math.min(rect.bottom, window.innerHeight) - Math.max(rect.top, 0));
-          const area = rect.width * rect.height;
-          return area > 0 && (visibleWidth * visibleHeight) / area > 0.06;
-        },
-      });
-      if (!blob) throw new Error("Capture returned no image data");
+      // Wait for React to swap transform:scale → CSS zoom (mobile Safari can't
+      // reliably rasterize transform:scale) and for chrome to hide.
+      await new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
+      const blob = await rasterizeElement(node);
       presentCapturedBlob(blob, "torn-pages");
     } catch (error) {
       console.warn("Could not capture torn pages", error);
       window.alert("이미지 캡처에 실패했습니다. 다시 시도해 주세요.");
     } finally {
       node.classList.remove("is-capturing");
-      setCapturing(false);
-    }
-  }
-
-  async function captureCalendar() {
-    const node = calendarCaptureRef.current;
-    if (!node || capturing || capturePreview) return;
-    setCapturing(true);
-    setCaptureFlash(true);
-    window.setTimeout(() => setCaptureFlash(false), 260);
-    try {
-      const blob = await htmlToImageToBlob(node, {
-        pixelRatio: Math.min(isMobileCaptureTarget() ? 1.25 : 2, window.devicePixelRatio || 1.5),
-        cacheBust: true,
-        skipFonts: true,
-      });
-      if (!blob) throw new Error("Capture returned no image data");
-      presentCapturedBlob(blob, "calendar");
-    } catch (error) {
-      console.warn("Could not capture calendar", error);
-      window.alert("이미지 캡처에 실패했습니다. 다시 시도해 주세요.");
-    } finally {
       setCapturing(false);
     }
   }
@@ -537,9 +532,6 @@ export default function Home() {
           <button className={index === 0 && !finished ? "is-selected" : undefined} aria-pressed={index === 0 && !finished} type="button" onClick={() => { setDatePickerOpen(false); jumpTo(0); setRotation(0); }}>START</button>
           <button className={index === todayIndex(dates) && !finished ? "is-selected" : undefined} aria-pressed={index === todayIndex(dates) && !finished} type="button" onClick={() => { setDatePickerOpen(false); jumpTo(todayIndex(dates)); }}>TODAY</button>
           <button className={datePickerOpen || (index !== 0 && index !== todayIndex(dates) && !finished) ? "is-selected" : undefined} aria-pressed={datePickerOpen} type="button" onClick={() => { setPickerMonth(current.getMonth()); setDatePickerOpen((open) => !open); }}>DATE</button>
-          <button className="capture-button" type="button" aria-label="Capture calendar" onClick={captureCalendar} disabled={capturing}>
-            <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d="M9 4 7.6 6H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-2.6L15 4Z" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" /><circle cx="12" cy="13" r="3.4" fill="none" stroke="currentColor" strokeWidth="1.8" /></svg>
-          </button>
         </div>
       </header>
 
@@ -559,7 +551,7 @@ export default function Home() {
         </section>
       )}
 
-      <div className="calendar-zoom-wrap" ref={calendarCaptureRef}>
+      <div className="calendar-zoom-wrap">
         <section
           className={`calendar-shell${finished ? " is-finished" : ""}`}
           aria-label="2026 tear-off calendar"
@@ -678,9 +670,12 @@ export default function Home() {
         <div
           ref={archiveFloorRef}
           className="archive-floor"
-          // transform:scale (not CSS `zoom`) keeps every card's layout/position
-          // exactly where it was — only the visual size changes, in place.
-          style={{ transform: `scale(${archiveZoom})` } as CSSProperties}
+          // Live view uses transform:scale so layout/positions stay put.
+          // During capture, swap to CSS zoom — html-to-image on mobile Safari
+          // often fails or blanks out transform:scale trees.
+          style={(capturing
+            ? { transform: "none", zoom: archiveZoom }
+            : { transform: `scale(${archiveZoom})` }) as CSSProperties}
           onPointerDown={onArchiveFloorPointerDown}
           onPointerMove={onArchiveFloorPointerMove}
           onPointerUp={onArchiveFloorPointerUp}
@@ -734,6 +729,7 @@ export default function Home() {
         <div className="capture-preview" role="dialog" aria-modal="true" aria-label="Captured image">
           <div className="capture-preview-panel">
             <img src={capturePreview.url} alt="Captured torn pages" />
+            <p className="capture-preview-hint">이미지 저장을 누르면 갤러리에 저장할 수 있습니다</p>
             <div className="capture-preview-actions">
               <button type="button" className="capture-preview-save" onClick={saveCapturePreview}>이미지 저장</button>
               <button type="button" className="capture-preview-cancel" onClick={closeCapturePreview}>닫기</button>

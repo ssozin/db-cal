@@ -124,12 +124,8 @@ button{font:inherit}
 .date-block strong{font-size:clamp(66px,12vw,84px)}
 .calendar-stage{background:radial-gradient(circle at 38% 32%,#fff 0%,#f3f3f1 38%,#e7e7e5 76%,#dededc 100%)}
 .binder{box-shadow:inset 1px 1px 0 rgba(255,255,255,.12),3px 7px 10px rgba(0,0,0,.2)}
-.remaining-pages{box-shadow:4px 12px 16px rgba(0,0,0,.13)}
-.paper-next{box-shadow:2px 2px 3px rgba(0,0,0,.06)}
-/* The single sheet on top (current + falling) stays flat/static — depth is
-   shown only by the binder-groove shadow (.calendar-depth-shadow) above, so
-   the torn sheet itself never flashes a shadow change on tear/swap. */
-.paper-current{box-shadow:none}
+/* No drop shadows behind page 1 / page 2 (or the remaining stack) — not even 1px. */
+.remaining-pages,.paper-next,.paper-current{box-shadow:none !important;filter:none}
 .ring{box-shadow:inset 1px 1px 1px rgba(255,255,255,.5),inset -2px -2px 2px rgba(32,34,38,.3),2px 2px 2px rgba(0,0,0,.34)}
 .board-back{box-shadow:5px 12px 18px rgba(0,0,0,.24)}
 .ring:before{content:"";position:absolute;z-index:3;top:5px;left:6px;display:block;width:9px;height:2px;transform:translateZ(3.6px) rotate(-28deg);border:0;border-radius:999px;background:linear-gradient(90deg,transparent 0%,rgba(255,255,255,.28) 15%,#fff 48%,rgba(255,255,255,.45) 70%,transparent 100%);box-shadow:0 0 1px rgba(255,255,255,.4);filter:none;pointer-events:none}
@@ -250,17 +246,14 @@ button{font:inherit}
 .archive-view.is-capturing .archive-instruction{visibility:hidden;opacity:0}
 .capture-preview{position:fixed;z-index:5000;inset:0;display:grid;place-items:center;padding:24px 18px;background:rgba(20,20,24,.55);backdrop-filter:blur(8px)}
 .capture-preview-panel{display:flex;width:min(92vw,420px);max-height:min(88svh,720px);flex-direction:column;gap:14px;padding:14px;border:1px solid rgba(255,255,255,.35);background:rgba(248,248,247,.96);box-shadow:0 22px 48px rgba(0,0,0,.28)}
-.capture-preview-panel img{display:block;width:100%;max-height:min(62svh,520px);object-fit:contain;background:#ecece9}
+.capture-preview-panel img{display:block;width:100%;max-height:min(62svh,520px);object-fit:contain;background:#ecece9;-webkit-touch-callout:default}
+.capture-preview-hint{margin:0;color:#5a5a60;font:11px/1.35 Arial,sans-serif;letter-spacing:.02em;text-align:center}
 .capture-preview-actions{display:flex;gap:8px}
 .capture-preview-save,.capture-preview-cancel{flex:1;min-height:44px;border:1px solid rgba(0,0,0,.18);background:#fff;color:#242428;font:700 12px/1 Arial,sans-serif;letter-spacing:.08em;cursor:pointer}
 .capture-preview-save{background:#1f1f22;border-color:#1f1f22;color:#fff}
 .capture-preview-cancel{background:rgba(255,255,255,.85)}
 .capture-preview-save:active,.capture-preview-cancel:active{transform:scale(.98)}
-@media(max-width:640px){.capture-preview{padding:16px 12px}.capture-preview-panel{width:100%;padding:12px;gap:12px}.capture-preview-save,.capture-preview-cancel{min-height:48px;font-size:13px}}
-.toolbar-actions .capture-button{display:grid;width:34px;height:34px;place-items:center;padding:0;border:1px solid rgba(0,0,0,.18);border-radius:999px;background:rgba(255,255,255,.7)}
-.toolbar-actions .capture-button:hover:not(:disabled){background:#1f1f22;color:#fff;opacity:1}
-.toolbar-actions .capture-button:disabled{opacity:.5;cursor:default}
-.toolbar-actions .capture-button:before{content:none}
+@media(max-width:640px){.capture-preview{padding:16px 12px}.capture-preview-panel{width:100%;padding:12px;gap:12px}.capture-preview-hint{font-size:12px}.capture-preview-save,.capture-preview-cancel{min-height:48px;font-size:13px}}
 /* Restored pre-equalize archive card layout (margin-top:auto footer).
    Photo fill matches paper so rotated cards don't show a black edge line. */
 .archive-page{position:absolute;display:flex;flex-direction:column;width:clamp(180px,24vw,290px);aspect-ratio:.88;transform:translate(var(--archive-x),var(--archive-y)) rotate(var(--archive-rotate));transform-origin:center;overflow:hidden;background:#f7f6f8;padding:12px;box-shadow:7px 12px 22px rgba(22,22,27,.19);touch-action:none;user-select:none;cursor:grab;transition:box-shadow .18s ease}
