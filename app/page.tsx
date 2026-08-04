@@ -722,7 +722,8 @@ export default function Home() {
     if (archivePointers.current.size < 2) archivePinchStart.current = null;
     archiveDrag.current = null;
     setActiveArchivePage(null);
-    if (wasDragging && moved > 8) {
+    // Treat small pointer jitter as a tap so double-click still registers.
+    if (wasDragging && moved > 14) {
       playPaperPlaceSound();
       archiveTapRef.current = null;
       return;
@@ -736,13 +737,17 @@ export default function Home() {
     if (
       prev
       && prev.page === page
-      && now - prev.time < 340
-      && Math.hypot(event.clientX - prev.x, event.clientY - prev.y) < 28
+      && now - prev.time < 420
+      && Math.hypot(event.clientX - prev.x, event.clientY - prev.y) < 36
     ) {
       openArchiveFocus(page);
       return;
     }
     archiveTapRef.current = { page, time: now, x: event.clientX, y: event.clientY };
+  }
+
+  function onArchiveCardClick(event: { detail: number }, page: number) {
+    if (event.detail >= 2) openArchiveFocus(page);
   }
 
   function closeCapturePreview() {
@@ -1086,6 +1091,7 @@ export default function Home() {
                 onPointerMove={onArchivePointerMove}
                 onPointerUp={onArchivePointerUp}
                 onPointerCancel={onArchivePointerUp}
+                onClick={(event) => onArchiveCardClick(event, pageIndex)}
                 onDoubleClick={(event) => {
                   event.preventDefault();
                   event.stopPropagation();
