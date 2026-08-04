@@ -4,24 +4,33 @@ import { useEffect } from "react";
 
 export default function DateButtonReopen() {
   useEffect(() => {
-    let replaying = false;
+    const syncLabels = () => {
+      const buttons = Array.from(
+        document.querySelectorAll<HTMLButtonElement>(".toolbar-actions > button"),
+      );
 
-    const onClick = (event: MouseEvent) => {
-      if (replaying) return;
-      const target = event.target instanceof Element ? event.target : null;
-      const button = target?.closest<HTMLButtonElement>(".toolbar-actions > button:nth-child(3)");
-      if (!button) return;
-
-      window.setTimeout(() => {
-        if (document.querySelector(".date-picker")) return;
-        replaying = true;
-        button.click();
-        window.setTimeout(() => { replaying = false; }, 0);
-      }, 60);
+      buttons.slice(0, 3).forEach((button, index) => {
+        const selected = button.classList.contains("is-selected");
+        const label = selected ? "-" : String(index + 1).padStart(2, "0");
+        if (button.textContent !== label) button.textContent = label;
+      });
     };
 
-    document.addEventListener("click", onClick, true);
-    return () => document.removeEventListener("click", onClick, true);
+    syncLabels();
+
+    const observer = new MutationObserver(syncLabels);
+    observer.observe(document.body, {
+      subtree: true,
+      childList: true,
+      attributes: true,
+      attributeFilter: ["class", "aria-pressed"],
+    });
+
+    document.addEventListener("click", syncLabels, true);
+    return () => {
+      observer.disconnect();
+      document.removeEventListener("click", syncLabels, true);
+    };
   }, []);
 
   return null;
