@@ -77,19 +77,49 @@ function clampZoom(value: number) {
 }
 
 let paperAudioContext: AudioContext | null = null;
+let paperAudioUnlocked = false;
 let lastPaperSlideAt = 0;
+
+function isMobileSoundTarget() {
+  if (typeof navigator === "undefined") return false;
+  return /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)
+    || (navigator.maxTouchPoints > 0 && /Macintosh/i.test(navigator.userAgent));
+}
 
 function getPaperAudioContext() {
   if (typeof window === "undefined") return null;
   const AudioCtx = window.AudioContext || (window as typeof window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
   if (!AudioCtx) return null;
   if (!paperAudioContext) paperAudioContext = new AudioCtx();
-  if (paperAudioContext.state === "suspended") void paperAudioContext.resume();
   return paperAudioContext;
 }
 
+/** iOS/Android only allow Web Audio after a real gesture + often a silent play. */
 function unlockTearAudio() {
-  getPaperAudioContext();
+  const ctx = getPaperAudioContext();
+  if (!ctx) return null;
+  if (ctx.state === "suspended") {
+    void ctx.resume().then(() => {
+      paperAudioUnlocked = true;
+    }).catch(() => undefined);
+  } else {
+    paperAudioUnlocked = true;
+  }
+  // Same-callstack silent buffer is what actually unlocks Mobile Safari.
+  try {
+    const silent = ctx.createBuffer(1, 1, ctx.sampleRate);
+    const source = ctx.createBufferSource();
+    source.buffer = silent;
+    const gain = ctx.createGain();
+    gain.gain.value = 0.0001;
+    source.connect(gain);
+    gain.connect(ctx.destination);
+    source.start(0);
+    paperAudioUnlocked = true;
+  } catch {
+    /* ignore unlock failures — later gestures retry */
+  }
+  return ctx;
 }
 
 function playNoiseBurst(
@@ -102,6 +132,7 @@ function playNoiseBurst(
     peakAt = 0.02,
   }: { duration: number; volume: number; highpass: number; lowpass: number; peakAt?: number },
 ) {
+  if (ctx.state === "suspended") void ctx.resume();
   const now = ctx.currentTime;
   const frames = Math.max(1, Math.floor(ctx.sampleRate * duration));
   const buffer = ctx.createBuffer(1, frames, ctx.sampleRate);
@@ -126,8 +157,10 @@ function playNoiseBurst(
   lop.type = "lowpass";
   lop.frequency.value = lowpass;
   const gain = ctx.createGain();
+  // Phone speakers need a bit more level than desktop.
+  const level = volume * (isMobileSoundTarget() ? 1.45 : 1);
   gain.gain.setValueAtTime(0.0001, now);
-  gain.gain.exponentialRampToValueAtTime(Math.max(0.0002, volume), now + peakAt);
+  gain.gain.exponentialRampToValueAtTime(Math.max(0.0002, level), now + peakAt);
   gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
   source.connect(hip);
   hip.connect(lop);
@@ -139,14 +172,14 @@ function playNoiseBurst(
 
 /** Soft peel / flutter when a page is torn from the pad. */
 function playTearSound() {
-  const ctx = getPaperAudioContext();
+  const ctx = unlockTearAudio();
   if (!ctx) return;
   // Low whoosh + light mid flutter — less "static burst", more paper peel.
-  playNoiseBurst(ctx, { duration: 0.42, volume: 0.38, highpass: 180, lowpass: 1400, peakAt: 0.03 });
+  playNoiseBurst(ctx, { duration: 0.42, volume: 0.42, highpass: 180, lowpass: 1400, peakAt: 0.03 });
   window.setTimeout(() => {
-    const again = getPaperAudioContext();
+    const again = unlockTearAudio();
     if (!again) return;
-    playNoiseBurst(again, { duration: 0.22, volume: 0.22, highpass: 700, lowpass: 3200, peakAt: 0.012 });
+    playNoiseBurst(again, { duration: 0.22, volume: 0.26, highpass: 700, lowpass: 3200, peakAt: 0.012 });
   }, 40);
 }
 
@@ -155,11 +188,11 @@ function playPaperSlideSound(force = false) {
   const now = performance.now();
   if (!force && now - lastPaperSlideAt < 90) return;
   lastPaperSlideAt = now;
-  const ctx = getPaperAudioContext();
+  const ctx = unlockTearAudio();
   if (!ctx) return;
   playNoiseBurst(ctx, {
     duration: force ? 0.16 : 0.11,
-    volume: force ? 0.2 : 0.12,
+    volume: force ? 0.26 : 0.16,
     highpass: 900,
     lowpass: 4200,
     peakAt: 0.01,
@@ -168,9 +201,9 @@ function playPaperSlideSound(force = false) {
 
 /** Soft settle tap when a dragged card is released. */
 function playPaperPlaceSound() {
-  const ctx = getPaperAudioContext();
+  const ctx = unlockTearAudio();
   if (!ctx) return;
-  playNoiseBurst(ctx, { duration: 0.14, volume: 0.16, highpass: 400, lowpass: 1800, peakAt: 0.008 });
+  playNoiseBurst(ctx, { duration: 0.14, volume: 0.22, highpass: 400, lowpass: 1800, peakAt: 0.008 });
 }
 
 function isMobileCaptureTarget() {
@@ -411,6 +444,17 @@ export default function Home() {
     if (capturePreviewUrlRef.current) URL.revokeObjectURL(capturePreviewUrlRef.current);
   }, []);
 
+  // Mobile Safari blocks Web Audio until a gesture runs unlock (silent buffer).
+  useEffect(() => {
+    const unlock = () => unlockTearAudio();
+    window.addEventListener("pointerdown", unlock, { passive: true });
+    window.addEventListener("touchstart", unlock, { passive: true });
+    return () => {
+      window.removeEventListener("pointerdown", unlock);
+      window.removeEventListener("touchstart", unlock);
+    };
+  }, []);
+
   useEffect(() => {
     setDepthIndex(finished ? dates.length : index);
   }, [index, finished, dates.length]);
@@ -569,6 +613,7 @@ export default function Home() {
   }
 
   function onArchiveFloorPointerDown(event: PointerEvent<HTMLDivElement>) {
+    unlockTearAudio();
     archivePointers.current.set(event.pointerId, { x: event.clientX, y: event.clientY });
     beginArchivePinchIfNeeded();
   }
