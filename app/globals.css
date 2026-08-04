@@ -4,10 +4,12 @@
 *{box-sizing:border-box}
 html,body{margin:0;min-height:100%;background:var(--stage);color:var(--ink);font-family:"Courier New",Courier,monospace}
 button{font:inherit}
-/* overflow:auto (not visible/hidden) so a transform:scale()'d calendar that
-   now extends past the viewport when zoomed in can still be reached by
-   scrolling — visible would just clip it invisibly with nothing to scroll. */
-.calendar-stage{position:relative;display:flex;min-height:100svh;flex-direction:column;align-items:center;justify-content:center;padding:108px 24px 52px;overflow:auto;background:radial-gradient(circle at 50% 46%,#fff 0,#f3f3f1 38%,#e7e7e5 76%,#dededc 100%)}
+/* Default clip so the tear-away translate (tens of vh) cannot grow a
+   scrollbar. Zoomed-in browsing re-enables overflow:auto via .is-zoomed;
+   an active tear always wins with .is-tearing → overflow:hidden. */
+.calendar-stage{position:relative;display:flex;min-height:100svh;flex-direction:column;align-items:center;justify-content:center;padding:108px 24px 52px;overflow:hidden;background:radial-gradient(circle at 50% 46%,#fff 0,#f3f3f1 38%,#e7e7e5 76%,#dededc 100%)}
+.calendar-stage.is-zoomed{overflow:auto}
+.calendar-stage.is-tearing{overflow:hidden}
 .toolbar{position:fixed;top:0;left:0;z-index:20;display:flex;width:100%;align-items:center;justify-content:flex-end;padding:22px 28px;border:0;background:transparent;backdrop-filter:none}
 .toolbar-title{position:absolute;top:20px;left:50%;text-align:center;transform:translateX(-50%)}
 .eyebrow{margin:0 0 5px;font:700 11px/1 Arial,sans-serif;letter-spacing:.18em}.notice{max-width:680px;margin:0;color:#656569;font:11px/1.4 Arial,sans-serif}.toolbar-actions{display:flex;gap:8px}.toolbar button,.toolbar .upload-button,.date-nav button{display:inline-flex;align-items:center;border:1px solid rgba(0,0,0,.18);border-radius:999px;background:rgba(255,255,255,.7);padding:9px 14px;color:#242428;font:700 10px/1 Arial,sans-serif;letter-spacing:.1em;cursor:pointer}.toolbar button:hover,.toolbar .upload-button:hover,.date-nav button:hover:not(:disabled){background:#1f1f22;color:#fff}.toolbar .upload-button{background:#1f1f22;color:#fff}
@@ -266,6 +268,8 @@ button{font:inherit}
 .calendar-shell.is-finished .paper-stack{visibility:hidden}
 .calendar-shell.is-finished .rear-frame{transform:translateZ(0)}
 @media(min-width:641px){
+  html,body{overflow:hidden;height:100%}
+  .calendar-stage{height:100svh}
   .toolbar-actions{position:absolute;top:50vh;left:28px;display:flex;flex-direction:column;align-items:flex-start;gap:18px;padding-left:18px;transform:translateY(-50%)}
   .toolbar-actions:before{content:"";position:absolute;top:6px;bottom:6px;left:3px;width:1px;background:rgba(35,35,39,.28)}
   .toolbar-actions button,.toolbar-actions .upload-button{position:relative;min-height:0;border:0;border-radius:0;background:transparent;padding:0;color:#242428;box-shadow:none}

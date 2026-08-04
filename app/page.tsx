@@ -481,7 +481,7 @@ export default function Home() {
   }
 
   return (
-    <main className={`calendar-stage${archiveOpen ? " archive-mode" : ""}`}>
+    <main className={`calendar-stage${archiveOpen ? " archive-mode" : ""}${zoom > 1 ? " is-zoomed" : ""}${falling || jumping ? " is-tearing" : ""}`}>
       <div className={`capture-flash${captureFlash ? " is-flashing" : ""}`} aria-hidden="true" />
       <header className="toolbar">
         <div className="toolbar-title">
