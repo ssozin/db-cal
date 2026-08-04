@@ -245,6 +245,32 @@ button{font:inherit}
 /* Hide chrome while rasterizing so the saved image is just the card layout. */
 .archive-view.is-capturing .archive-toolbar,
 .archive-view.is-capturing .archive-instruction{visibility:hidden;opacity:0}
+.archive-view.is-focusing .archive-toolbar,
+.archive-view.is-focusing .archive-instruction{visibility:hidden;opacity:0;pointer-events:none}
+.archive-view.is-focusing .archive-floor{filter:blur(10px) saturate(.85);opacity:.55;pointer-events:none;transition:filter .28s ease,opacity .28s ease}
+.archive-page.is-focused-source{opacity:0}
+.archive-focus{position:fixed;z-index:2200;inset:0;display:grid;place-items:center;padding:28px 18px;background:rgba(22,22,26,.34);animation:archiveFocusIn .28s ease both;pointer-events:auto}
+.archive-focus-close{position:fixed;top:18px;right:18px;z-index:2210;display:grid;width:40px;height:40px;place-items:center;border:1px solid rgba(255,255,255,.28);border-radius:999px;background:rgba(255,255,255,.88);color:#242428;cursor:pointer;backdrop-filter:blur(10px);transition:transform .15s ease,background .15s ease,color .15s ease}
+.archive-focus-close:hover{background:#1f1f22;color:#fff}
+.archive-focus-close:active{transform:scale(.94)}
+.archive-focus-card{position:relative;display:flex;width:min(78vw,360px);flex-direction:column;aspect-ratio:.88;overflow:hidden;background:#f7f6f8;padding:14px;box-shadow:0 28px 64px rgba(18,18,22,.38);animation:archiveFocusCardIn .34s cubic-bezier(.22,.8,.22,1) both;transform-origin:center}
+.archive-focus-card .archive-date{height:44%}
+.archive-focus-card .archive-date span{font-size:clamp(26px,5.4vw,38px)}
+.archive-focus-card .archive-date strong{font-size:clamp(44px,8.4vw,62px)}
+.archive-focus-card .archive-footer{margin-top:auto;font-size:7px}
+@keyframes archiveFocusIn{from{opacity:0}to{opacity:1}}
+@keyframes archiveFocusCardIn{from{opacity:0;transform:scale(.86)}to{opacity:1;transform:scale(1)}}
+@media(max-width:640px){
+  .archive-focus{padding:20px 14px;background:rgba(22,22,26,.4)}
+  .archive-focus-close{top:14px;right:14px;width:36px;height:36px}
+  .archive-focus-card{width:min(86vw,340px);padding:12px;aspect-ratio:.88}
+  .archive-view.is-focusing .archive-floor{filter:blur(8px) saturate(.88);opacity:.5}
+}
+@media(min-width:641px){
+  .archive-focus-card{aspect-ratio:1/1.082;padding:14px 16px 0;width:min(34vw,380px)}
+  .archive-focus-card .archive-date{flex:0 0 49%;height:49%}
+  .archive-focus-card .archive-footer{flex:1 1 auto;margin-top:0;align-items:center;padding:8px 0}
+}
 .capture-preview{position:fixed;z-index:5000;inset:0;display:grid;place-items:center;padding:24px 18px;background:rgba(20,20,24,.55);backdrop-filter:blur(8px)}
 .capture-preview-panel{display:flex;width:min(92vw,420px);max-height:min(88svh,720px);flex-direction:column;gap:14px;padding:14px;border:1px solid rgba(255,255,255,.35);background:rgba(248,248,247,.96);box-shadow:0 22px 48px rgba(0,0,0,.28)}
 .capture-preview-panel img{display:block;width:100%;max-height:min(62svh,520px);object-fit:contain;background:#ecece9;-webkit-touch-callout:default}
