@@ -4,7 +4,9 @@
 }
 
 .toolbar-actions > button {
+  min-width: 22px !important;
   font-size: 0 !important;
+  cursor: pointer !important;
 }
 
 html body .toolbar-actions > button::after {
@@ -19,6 +21,7 @@ html body .toolbar-actions > button::after {
   color: inherit !important;
   font: inherit !important;
   font-size: 11px !important;
+  pointer-events: none !important;
 }
 
 html body .toolbar-actions > button:nth-child(1)::after {
@@ -31,4 +34,9 @@ html body .toolbar-actions > button:nth-child(2)::after {
 
 html body .toolbar-actions > button:nth-child(3)::after {
   content: "03" !important;
+}
+
+html body .toolbar-actions > button:nth-child(3).is-selected::after {
+  display: inline !important;
+  content: "-" !important;
 }
