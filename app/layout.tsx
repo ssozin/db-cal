@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import ArchivePerformanceFix from "./archive-performance-fix";
 import ArchiveCardFocus from "./archive-card-focus";
 import CalendarExperienceFix from "./calendar-experience-fix";
+import CalendarVisualTuning from "./calendar-visual-tuning";
 import "./globals.css";
 
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
@@ -23,6 +24,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <ArchivePerformanceFix />
         <ArchiveCardFocus />
         <CalendarExperienceFix />
+        <CalendarVisualTuning />
       </body>
     </html>
   );
