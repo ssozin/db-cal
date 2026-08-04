@@ -76,54 +76,101 @@ function clampZoom(value: number) {
   return Math.max(0.65, Math.min(1.5, Number(value.toFixed(3))));
 }
 
-let tearAudioContext: AudioContext | null = null;
+let paperAudioContext: AudioContext | null = null;
+let lastPaperSlideAt = 0;
 
-function getTearAudioContext() {
+function getPaperAudioContext() {
   if (typeof window === "undefined") return null;
   const AudioCtx = window.AudioContext || (window as typeof window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
   if (!AudioCtx) return null;
-  if (!tearAudioContext) tearAudioContext = new AudioCtx();
-  if (tearAudioContext.state === "suspended") void tearAudioContext.resume();
-  return tearAudioContext;
+  if (!paperAudioContext) paperAudioContext = new AudioCtx();
+  if (paperAudioContext.state === "suspended") void paperAudioContext.resume();
+  return paperAudioContext;
 }
 
 function unlockTearAudio() {
-  getTearAudioContext();
+  getPaperAudioContext();
 }
 
-/** Short synthesized paper-tear for each ripped page (no audio asset needed). */
-function playTearSound() {
-  const ctx = getTearAudioContext();
-  if (!ctx) return;
+function playNoiseBurst(
+  ctx: AudioContext,
+  {
+    duration,
+    volume,
+    highpass,
+    lowpass,
+    peakAt = 0.02,
+  }: { duration: number; volume: number; highpass: number; lowpass: number; peakAt?: number },
+) {
   const now = ctx.currentTime;
-  const duration = 0.32;
-  const buffer = ctx.createBuffer(1, Math.floor(ctx.sampleRate * duration), ctx.sampleRate);
+  const frames = Math.max(1, Math.floor(ctx.sampleRate * duration));
+  const buffer = ctx.createBuffer(1, frames, ctx.sampleRate);
   const data = buffer.getChannelData(0);
-  for (let i = 0; i < data.length; i += 1) {
-    const t = i / data.length;
-    const crackle = t > 0.07 && t < 0.15 ? 0.4 * Math.exp(-(t - 0.07) * 28) : 0;
-    const envelope = Math.exp(-t * 12) * (0.5 + 0.5 * Math.sin(t * 36)) + crackle;
-    data[i] = (Math.random() * 2 - 1) * envelope * 0.62;
+  let pink = 0;
+  for (let i = 0; i < frames; i += 1) {
+    const white = Math.random() * 2 - 1;
+    // Soft pink-ish noise reads more like paper than harsh white noise.
+    pink = pink * 0.86 + white * 0.14;
+    const t = i / frames;
+    const flutter = 0.65 + 0.35 * Math.sin(t * Math.PI * 7 + white);
+    const envelope = Math.exp(-t * 9) * flutter;
+    data[i] = pink * envelope;
   }
+
   const source = ctx.createBufferSource();
   source.buffer = buffer;
-  const band = ctx.createBiquadFilter();
-  band.type = "bandpass";
-  band.frequency.value = 1700;
-  band.Q.value = 0.75;
-  const high = ctx.createBiquadFilter();
-  high.type = "highpass";
-  high.frequency.value = 550;
+  const hip = ctx.createBiquadFilter();
+  hip.type = "highpass";
+  hip.frequency.value = highpass;
+  const lop = ctx.createBiquadFilter();
+  lop.type = "lowpass";
+  lop.frequency.value = lowpass;
   const gain = ctx.createGain();
   gain.gain.setValueAtTime(0.0001, now);
-  gain.gain.exponentialRampToValueAtTime(0.85, now + 0.014);
+  gain.gain.exponentialRampToValueAtTime(Math.max(0.0002, volume), now + peakAt);
   gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
-  source.connect(band);
-  band.connect(high);
-  high.connect(gain);
+  source.connect(hip);
+  hip.connect(lop);
+  lop.connect(gain);
   gain.connect(ctx.destination);
   source.start(now);
-  source.stop(now + duration + 0.03);
+  source.stop(now + duration + 0.02);
+}
+
+/** Soft peel / flutter when a page is torn from the pad. */
+function playTearSound() {
+  const ctx = getPaperAudioContext();
+  if (!ctx) return;
+  // Low whoosh + light mid flutter — less "static burst", more paper peel.
+  playNoiseBurst(ctx, { duration: 0.42, volume: 0.38, highpass: 180, lowpass: 1400, peakAt: 0.03 });
+  window.setTimeout(() => {
+    const again = getPaperAudioContext();
+    if (!again) return;
+    playNoiseBurst(again, { duration: 0.22, volume: 0.22, highpass: 700, lowpass: 3200, peakAt: 0.012 });
+  }, 40);
+}
+
+/** Quiet paper rustle when a torn-page card is picked up or dragged. */
+function playPaperSlideSound(force = false) {
+  const now = performance.now();
+  if (!force && now - lastPaperSlideAt < 90) return;
+  lastPaperSlideAt = now;
+  const ctx = getPaperAudioContext();
+  if (!ctx) return;
+  playNoiseBurst(ctx, {
+    duration: force ? 0.16 : 0.11,
+    volume: force ? 0.2 : 0.12,
+    highpass: 900,
+    lowpass: 4200,
+    peakAt: 0.01,
+  });
+}
+
+/** Soft settle tap when a dragged card is released. */
+function playPaperPlaceSound() {
+  const ctx = getPaperAudioContext();
+  if (!ctx) return;
+  playNoiseBurst(ctx, { duration: 0.14, volume: 0.16, highpass: 400, lowpass: 1800, peakAt: 0.008 });
 }
 
 function isMobileCaptureTarget() {
@@ -565,6 +612,7 @@ export default function Home() {
   });
 
   function onArchivePointerDown(event: PointerEvent<HTMLElement>, page: number) {
+    unlockTearAudio();
     archivePointers.current.set(event.pointerId, { x: event.clientX, y: event.clientY });
     if (beginArchivePinchIfNeeded()) return;
     const offset = archiveOffsets[page] ?? { x: 0, y: 0 };
@@ -572,23 +620,29 @@ export default function Home() {
     setActiveArchivePage(page);
     archiveZCounter.current += 1;
     setArchiveZIndices((existing) => ({ ...existing, [page]: archiveZCounter.current }));
+    playPaperSlideSound(true);
     event.currentTarget.setPointerCapture(event.pointerId);
   }
 
   function onArchivePointerMove(event: PointerEvent<HTMLElement>) {
     const drag = archiveDrag.current;
     if (!drag) return;
+    const dx = event.clientX - drag.x;
+    const dy = event.clientY - drag.y;
+    if (Math.hypot(dx, dy) > 6) playPaperSlideSound();
     setArchiveOffsets((existing) => ({
       ...existing,
-      [drag.page]: { x: drag.offsetX + event.clientX - drag.x, y: drag.offsetY + event.clientY - drag.y },
+      [drag.page]: { x: drag.offsetX + dx, y: drag.offsetY + dy },
     }));
   }
 
   function onArchivePointerUp(event: PointerEvent<HTMLElement>) {
+    const wasDragging = !!archiveDrag.current;
     archivePointers.current.delete(event.pointerId);
     if (archivePointers.current.size < 2) archivePinchStart.current = null;
     archiveDrag.current = null;
     setActiveArchivePage(null);
+    if (wasDragging) playPaperPlaceSound();
   }
 
   function closeCapturePreview() {
