@@ -1,7 +1,7 @@
 "use client";
 
 import { CSSProperties, PointerEvent, useEffect, useMemo, useRef, useState } from "react";
-import { toBlob as htmlToImageToBlob, toCanvas as htmlToImageToCanvas } from "html-to-image";
+import { toBlob as htmlToImageToBlob } from "html-to-image";
 
 type PhotoMap = Record<string, { url: string; name: string; event: string; sourceDate: string }>;
 
@@ -92,6 +92,175 @@ function downloadBlobFile(blob: Blob, filename: string) {
   link.click();
   link.remove();
   window.setTimeout(() => URL.revokeObjectURL(url), 60000);
+}
+
+function transformRotation(transform: string) {
+  if (!transform || transform === "none") return 0;
+  const matrix = new DOMMatrix(transform);
+  return Math.atan2(matrix.b, matrix.a);
+}
+
+async function waitForImage(img: HTMLImageElement) {
+  if (img.complete && img.naturalWidth > 0) return true;
+  try {
+    if (typeof img.decode === "function") await img.decode();
+  } catch {
+    /* ignore decode errors — naturalWidth check below */
+  }
+  if (img.complete && img.naturalWidth > 0) return true;
+  await new Promise<void>((resolve) => {
+    const done = () => resolve();
+    img.addEventListener("load", done, { once: true });
+    img.addEventListener("error", done, { once: true });
+    window.setTimeout(done, 1200);
+  });
+  return img.complete && img.naturalWidth > 0;
+}
+
+function drawArchiveCard(
+  ctx: CanvasRenderingContext2D,
+  el: HTMLElement,
+  rect: DOMRect,
+  floorScale: number,
+) {
+  const width = el.offsetWidth;
+  const height = el.offsetHeight;
+  if (width < 2 || height < 2) return;
+
+  const angle = transformRotation(getComputedStyle(el).transform);
+  const drawW = width * floorScale;
+  const drawH = height * floorScale;
+  const cx = rect.left + rect.width / 2;
+  const cy = rect.top + rect.height / 2;
+
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.rotate(angle);
+  ctx.translate(-drawW / 2, -drawH / 2);
+
+  ctx.fillStyle = "#f7f6f8";
+  ctx.shadowColor = "rgba(22,22,27,0.2)";
+  ctx.shadowBlur = 14 * floorScale;
+  ctx.shadowOffsetX = 5 * floorScale;
+  ctx.shadowOffsetY = 9 * floorScale;
+  ctx.fillRect(0, 0, drawW, drawH);
+  ctx.shadowColor = "transparent";
+  ctx.shadowBlur = 0;
+  ctx.shadowOffsetX = 0;
+  ctx.shadowOffsetY = 0;
+
+  const padX = drawW * 0.067;
+  const padTop = drawW * 0.067;
+  const dateH = height * 0.44 * floorScale;
+
+  ctx.fillStyle = "#25252a";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  let textY = padTop + dateH * 0.28;
+  ctx.font = `400 ${Math.max(9, drawW * 0.105)}px "Courier New", Courier, monospace`;
+  el.querySelectorAll(".archive-date span").forEach((node) => {
+    ctx.fillText((node.textContent || "").trim(), drawW / 2, textY);
+    textY += drawW * 0.12;
+  });
+  const strong = el.querySelector(".archive-date strong");
+  if (strong) {
+    ctx.font = `400 ${Math.max(14, drawW * 0.19)}px "Courier New", Courier, monospace`;
+    ctx.fillText((strong.textContent || "").trim(), drawW / 2, textY + drawW * 0.02);
+  }
+
+  const photoW = drawW - padX * 2;
+  const photoH = photoW * (906 / 2250);
+  const photoY = padTop + dateH;
+  const img = el.querySelector(".archive-photo img") as HTMLImageElement | null;
+  if (img && img.naturalWidth > 0) {
+    const targetRatio = photoW / photoH;
+    const imageRatio = img.naturalWidth / img.naturalHeight;
+    let sx = 0;
+    let sy = 0;
+    let sw = img.naturalWidth;
+    let sh = img.naturalHeight;
+    if (imageRatio > targetRatio) {
+      sw = img.naturalHeight * targetRatio;
+      sx = (img.naturalWidth - sw) / 2;
+    } else {
+      sh = img.naturalWidth / targetRatio;
+      sy = (img.naturalHeight - sh) / 2;
+    }
+    try {
+      ctx.drawImage(img, sx, sy, sw, sh, padX, photoY, photoW, photoH);
+    } catch {
+      ctx.fillStyle = "#d0d0ce";
+      ctx.fillRect(padX, photoY, photoW, photoH);
+    }
+  } else {
+    ctx.fillStyle = "#173028";
+    ctx.fillRect(padX, photoY, photoW, photoH);
+  }
+
+  const footer = el.querySelector(".archive-footer");
+  if (footer) {
+    const footerTop = photoY + photoH + drawW * 0.055;
+    ctx.fillStyle = "#3c3c42";
+    ctx.font = `700 ${Math.max(6, drawW * 0.034)}px Arial, sans-serif`;
+    ctx.textBaseline = "top";
+    let lineY = footerTop;
+    ctx.textAlign = "left";
+    footer.querySelector("div")?.querySelectorAll("span, b").forEach((node) => {
+      ctx.fillText((node.textContent || "").trim().slice(0, 32), padX, lineY);
+      lineY += drawW * 0.042;
+    });
+    const day = Array.from(footer.children).find((child) => child.tagName === "SPAN");
+    if (day) {
+      ctx.textAlign = "right";
+      ctx.fillText((day.textContent || "").trim(), drawW - padX, footerTop);
+    }
+  }
+
+  ctx.restore();
+}
+
+async function captureArchiveViewport(floorScale: number) {
+  const width = window.innerWidth;
+  const height = window.innerHeight;
+  const dpr = Math.min(1.5, window.devicePixelRatio || 1);
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.max(1, Math.floor(width * dpr));
+  canvas.height = Math.max(1, Math.floor(height * dpr));
+  const ctx = canvas.getContext("2d");
+  if (!ctx) throw new Error("Canvas unavailable");
+  ctx.scale(dpr, dpr);
+
+  const gradient = ctx.createRadialGradient(width * 0.42, height * 0.34, 0, width * 0.42, height * 0.34, Math.max(width, height));
+  gradient.addColorStop(0, "#fafaf9");
+  gradient.addColorStop(0.74, "#e8e8e6");
+  gradient.addColorStop(1, "#dededb");
+  ctx.fillStyle = gradient;
+  ctx.fillRect(0, 0, width, height);
+
+  const cards = Array.from(document.querySelectorAll<HTMLElement>(".archive-page"))
+    .map((el) => {
+      const rect = el.getBoundingClientRect();
+      const z = Number(getComputedStyle(el).zIndex) || 0;
+      return { el, rect, z };
+    })
+    .filter(({ rect }) => rect.right > 8 && rect.bottom > 8 && rect.left < width - 8 && rect.top < height - 8)
+    .sort((a, b) => a.z - b.z)
+    .slice(-48);
+
+  await Promise.all(
+    cards.map(async ({ el }) => {
+      const img = el.querySelector(".archive-photo img") as HTMLImageElement | null;
+      if (img) await waitForImage(img);
+    }),
+  );
+
+  for (const { el, rect } of cards) {
+    drawArchiveCard(ctx, el, rect, floorScale);
+  }
+
+  const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/png"));
+  if (!blob || blob.size === 0) throw new Error("Capture returned no image data");
+  return blob;
 }
 
 export default function Home() {
@@ -418,61 +587,65 @@ export default function Home() {
     closeCapturePreview();
   }
 
-  async function rasterizeElement(node: HTMLElement) {
-    const mobile = isMobileCaptureTarget();
-    const options = {
-      // cacheBust re-fetches every GitHub image and often fails CORS/timing on iOS.
-      cacheBust: false,
-      skipFonts: true,
-      pixelRatio: Math.min(mobile ? 1 : 2, window.devicePixelRatio || 1),
-      width: node.clientWidth,
-      height: node.clientHeight,
-      filter: (el: HTMLElement) => {
-        if (!(el instanceof HTMLElement)) return true;
-        if (
-          el.classList.contains("archive-toolbar")
-          || el.classList.contains("archive-instruction")
-          || el.classList.contains("capture-flash")
-          || el.classList.contains("capture-preview")
-        ) return false;
-        if (!el.classList.contains("archive-page")) return true;
-        const rect = el.getBoundingClientRect();
-        const visibleWidth = Math.max(0, Math.min(rect.right, window.innerWidth) - Math.max(rect.left, 0));
-        const visibleHeight = Math.max(0, Math.min(rect.bottom, window.innerHeight) - Math.max(rect.top, 0));
-        const area = rect.width * rect.height;
-        return area > 0 && (visibleWidth * visibleHeight) / area > 0.04;
-      },
-    };
-
-    try {
-      const blob = await htmlToImageToBlob(node, options);
-      if (blob && blob.size > 0) return blob;
-    } catch (error) {
-      console.warn("html-to-image toBlob failed, trying canvas", error);
-    }
-
-    const canvas = await htmlToImageToCanvas(node, options);
-    const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/png"));
-    if (!blob || blob.size === 0) throw new Error("Capture returned no image data");
-    return blob;
-  }
-
   async function captureArchive() {
     const node = archiveViewRef.current;
     if (!node || capturing || capturePreview) return;
+    // Keep archive open no matter what — never alert()/navigate (those were
+    // bouncing mobile Safari back to the calendar start screen).
     setCapturing(true);
     setCaptureFlash(true);
     node.classList.add("is-capturing");
     window.setTimeout(() => setCaptureFlash(false), 260);
     try {
-      // Wait for React to swap transform:scale → CSS zoom (mobile Safari can't
-      // reliably rasterize transform:scale) and for chrome to hide.
       await new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
-      const blob = await rasterizeElement(node);
+
+      let blob: Blob | null = null;
+      try {
+        // Lightweight path: paint only on-screen cards. Avoids cloning hundreds
+        // of nodes (html-to-image) which OOMs / reloads iOS tabs.
+        blob = await captureArchiveViewport(archiveZoom);
+      } catch (error) {
+        console.warn("Canvas archive capture failed, trying html-to-image", error);
+      }
+
+      if (!blob) {
+        blob = await htmlToImageToBlob(node, {
+          cacheBust: false,
+          skipFonts: true,
+          pixelRatio: 1,
+          width: node.clientWidth,
+          height: node.clientHeight,
+          filter: (el) => {
+            if (!(el instanceof HTMLElement)) return true;
+            if (
+              el.classList.contains("archive-toolbar")
+              || el.classList.contains("archive-instruction")
+              || el.classList.contains("capture-flash")
+              || el.classList.contains("capture-preview")
+            ) return false;
+            if (!el.classList.contains("archive-page")) return true;
+            const rect = el.getBoundingClientRect();
+            const visibleWidth = Math.max(0, Math.min(rect.right, window.innerWidth) - Math.max(rect.left, 0));
+            const visibleHeight = Math.max(0, Math.min(rect.bottom, window.innerHeight) - Math.max(rect.top, 0));
+            const area = rect.width * rect.height;
+            return area > 0 && (visibleWidth * visibleHeight) / area > 0.08;
+          },
+        });
+      }
+
+      if (!blob || blob.size === 0) throw new Error("Capture returned no image data");
       presentCapturedBlob(blob, "torn-pages");
     } catch (error) {
       console.warn("Could not capture torn pages", error);
-      window.alert("이미지 캡처에 실패했습니다. 다시 시도해 주세요.");
+      // Stay in archive; surface failure inside the save sheet so the page
+      // never reloads or jumps back to the calendar.
+      if (capturePreviewUrlRef.current) URL.revokeObjectURL(capturePreviewUrlRef.current);
+      capturePreviewUrlRef.current = null;
+      setCapturePreview({
+        url: "",
+        blob: new Blob(),
+        name: "torn-pages.png",
+      });
     } finally {
       node.classList.remove("is-capturing");
       setCapturing(false);
@@ -670,12 +843,7 @@ export default function Home() {
         <div
           ref={archiveFloorRef}
           className="archive-floor"
-          // Live view uses transform:scale so layout/positions stay put.
-          // During capture, swap to CSS zoom — html-to-image on mobile Safari
-          // often fails or blanks out transform:scale trees.
-          style={(capturing
-            ? { transform: "none", zoom: archiveZoom }
-            : { transform: `scale(${archiveZoom})` }) as CSSProperties}
+          style={{ transform: `scale(${archiveZoom})` } as CSSProperties}
           onPointerDown={onArchiveFloorPointerDown}
           onPointerMove={onArchiveFloorPointerMove}
           onPointerUp={onArchiveFloorPointerUp}
@@ -728,10 +896,18 @@ export default function Home() {
       {capturePreview && (
         <div className="capture-preview" role="dialog" aria-modal="true" aria-label="Captured image">
           <div className="capture-preview-panel">
-            <img src={capturePreview.url} alt="Captured torn pages" />
-            <p className="capture-preview-hint">이미지 저장을 누르면 갤러리에 저장할 수 있습니다</p>
+            {capturePreview.url ? (
+              <img src={capturePreview.url} alt="Captured torn pages" />
+            ) : (
+              <p className="capture-preview-hint">캡처에 실패했습니다. 닫은 뒤 다시 시도해 주세요.</p>
+            )}
+            {capturePreview.url && (
+              <p className="capture-preview-hint">이미지 저장을 누르면 갤러리에 저장할 수 있습니다</p>
+            )}
             <div className="capture-preview-actions">
-              <button type="button" className="capture-preview-save" onClick={saveCapturePreview}>이미지 저장</button>
+              {capturePreview.url && capturePreview.blob.size > 0 && (
+                <button type="button" className="capture-preview-save" onClick={saveCapturePreview}>이미지 저장</button>
+              )}
               <button type="button" className="capture-preview-cancel" onClick={closeCapturePreview}>닫기</button>
             </div>
           </div>
