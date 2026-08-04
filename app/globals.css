@@ -196,6 +196,7 @@ button{font:inherit}
   .floor-pile-trigger{bottom:8px;transform:translateX(-50%) scale(.92)}
   .archive-floor{inset:64px 0 0}
   .archive-page{--archive-gap:8px;width:154px;padding:8px 8px var(--archive-gap)}
+  .archive-date{flex-basis:44%;height:44%}
   .archive-date span{font-size:19px}.archive-date strong{font-size:33px}
   .archive-toolbar{top:14px;left:14px}
 }
