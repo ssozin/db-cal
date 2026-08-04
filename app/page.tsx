@@ -40,7 +40,8 @@ function filenameMeta(filename: string) {
   const day = Number(sourceDate.length === 8 ? sourceDate.slice(6, 8) : sourceDate.slice(4, 6));
   const candidate = new Date(YEAR, month - 1, day, 12);
   if (candidate.getFullYear() !== YEAR || candidate.getMonth() !== month - 1 || candidate.getDate() !== day) return null;
-  return { key: dateKey(candidate), sourceDate, event: match[2].trim() || "UNTITLED EVENT" };
+  const event = match[2].trim().replace(/\s*\(\d+\)\s*$/, "") || "UNTITLED EVENT";
+  return { key: dateKey(candidate), sourceDate, event };
 }
 
 function isKorean(value: string) {
@@ -90,7 +91,53 @@ export default function Home() {
   const nextPhoto = photos[dateKey(next)];
 
   useEffect(() => { photosRef.current = photos; }, [photos]);
-  useEffect(() => () => Object.values(photosRef.current).forEach((photo) => URL.revokeObjectURL(photo.url)), []);
+  useEffect(() => () => Object.values(photosRef.current).forEach((photo) => {
+    if (photo.url.startsWith("blob:")) URL.revokeObjectURL(photo.url);
+  }), []);
+
+  useEffect(() => {
+    const controller = new AbortController();
+
+    fetch("https://api.github.com/repos/ssozin/db-cal/contents/df_img?ref=main", {
+      cache: "no-store",
+      headers: { Accept: "application/vnd.github+json" },
+      signal: controller.signal,
+    })
+      .then((response) => response.ok ? response.json() : [])
+      .then((items: Array<{ name: string; type: string; download_url: string | null }>) => {
+        const assets: Array<PhotoMap[string]> = [];
+        items.forEach((item) => {
+          if (item.type !== "file" || !item.download_url || !/\.(png|jpe?g|webp|gif)$/i.test(item.name)) return;
+          const meta = filenameMeta(item.name);
+          if (!meta) return;
+          assets.push({
+            url: item.download_url,
+            name: item.name,
+            event: meta.event,
+            sourceDate: meta.sourceDate,
+          });
+        });
+        assets.sort((a, b) => a.name.localeCompare(b.name));
+        const randomizedPhotos: PhotoMap = {};
+        if (assets.length > 0) {
+          let previousIndex = -1;
+          dates.forEach((date, dateIndex) => {
+            let randomIndex = Math.floor(seeded((dateIndex + 1) * 97.13) * assets.length);
+            if (assets.length > 1 && randomIndex === previousIndex) {
+              randomIndex = (randomIndex + 1) % assets.length;
+            }
+            randomizedPhotos[dateKey(date)] = assets[randomIndex];
+            previousIndex = randomIndex;
+          });
+        }
+        setPhotos(randomizedPhotos);
+      })
+      .catch((error: Error) => {
+        if (error.name !== "AbortError") console.warn("Could not load df_img", error);
+      });
+
+    return () => controller.abort();
+  }, []);
 
   function nextDay(targetX = -4.3) {
     if (falling || jumping || finished) return;
@@ -206,6 +253,13 @@ export default function Home() {
     return day > 0 && day <= pickerLength ? new Date(YEAR, pickerMonth, day, 12) : null;
   });
 
+  function pickerDayClass(date: Date) {
+    return [
+      dateKey(date) === dateKey(current) ? "is-current" : "",
+      photos[dateKey(date)] ? "has-photo" : "",
+    ].filter(Boolean).join(" ") || undefined;
+  }
+
   return (
     <main className={`calendar-stage${archiveOpen ? " archive-mode" : ""}`}>
       <header className="toolbar">
@@ -214,8 +268,8 @@ export default function Home() {
           <p className="notice">Online Daily Tear-Off Calendar</p>
         </div>
         <div className="toolbar-actions">
-          <button className={index === todayIndex(dates) && !finished ? "is-selected" : undefined} aria-pressed={index === todayIndex(dates) && !finished} type="button" onClick={() => { setDatePickerOpen(false); jumpTo(todayIndex(dates)); }}>TODAY</button>
           <button className={index === 0 && !finished ? "is-selected" : undefined} aria-pressed={index === 0 && !finished} type="button" onClick={() => { setDatePickerOpen(false); jumpTo(0); setRotation(0); }}>START</button>
+          <button className={index === todayIndex(dates) && !finished ? "is-selected" : undefined} aria-pressed={index === todayIndex(dates) && !finished} type="button" onClick={() => { setDatePickerOpen(false); jumpTo(todayIndex(dates)); }}>TODAY</button>
           <button className={datePickerOpen || (index !== 0 && index !== todayIndex(dates) && !finished) ? "is-selected" : undefined} aria-pressed={datePickerOpen} type="button" onClick={() => { setPickerMonth(current.getMonth()); setDatePickerOpen((open) => !open); }}>DATE</button>
         </div>
       </header>
@@ -230,7 +284,7 @@ export default function Home() {
           <div className="date-picker-weekdays">{["S","M","T","W","T","F","S"].map((day, i) => <span key={`${day}-${i}`}>{day}</span>)}</div>
           <div className="date-picker-grid">
             {pickerCells.map((date, cell) => date ? (
-              <button className={dateKey(date) === dateKey(current) ? "is-current" : undefined} key={dateKey(date)} type="button" onClick={() => { setDatePickerOpen(false); setRotation(0); jumpTo(dates.findIndex((item) => dateKey(item) === dateKey(date))); }}>{date.getDate()}</button>
+              <button className={pickerDayClass(date)} key={dateKey(date)} type="button" onClick={() => { setDatePickerOpen(false); setRotation(0); jumpTo(dates.findIndex((item) => dateKey(item) === dateKey(date))); }}>{date.getDate()}</button>
             ) : <span key={`empty-${cell}`} />)}
           </div>
         </section>
