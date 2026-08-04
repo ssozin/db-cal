@@ -462,8 +462,12 @@ export default function Home() {
           // Nudging by a hair keeps the 3D context alive at rest too.
           // Zoom is a visual transform:scale (not the CSS `zoom` property) so
           // pinching/scrolling magnifies in place without reflowing anything
-          // around the calendar.
-          transform: `rotateY(${rotation || 0.01}deg) scale(${zoom})`,
+          // around the calendar. Use scale3d, not scale: plain scale() only
+          // scales X/Y, leaving every translateZ-based depth (side panels,
+          // back board, binder) at a fixed pixel size — so the stack's
+          // thickness-to-width ratio would visibly warp as you zoomed while
+          // rotated. scale3d scales X/Y/Z together, keeping it constant.
+          transform: `rotateY(${rotation || 0.01}deg) scale3d(${zoom}, ${zoom}, ${zoom})`,
           "--removed-depth": `${removedDepth}px`,
           "--removed-depth-negative": `${-removedDepth}px`,
           "--remaining-depth": `${remainingDepth}px`,
