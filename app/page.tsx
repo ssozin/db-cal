@@ -260,13 +260,22 @@ export default function Home() {
     setZoom((value) => clampZoom(value + direction * 0.06));
   }
 
+  // Shared by both the floor (empty space) and individual card pointerdown
+  // handlers: whichever one sees the second finger land cancels any
+  // in-progress card pick-up/selection and starts a pinch instead, so a
+  // 2-finger touch never "selects" the card(s) under either finger.
+  function beginArchivePinchIfNeeded() {
+    if (archivePointers.current.size !== 2) return false;
+    const [a, b] = Array.from(archivePointers.current.values());
+    archivePinchStart.current = { distance: pointerDistance(a, b), zoom: archiveZoom };
+    archiveDrag.current = null;
+    setActiveArchivePage(null);
+    return true;
+  }
+
   function onArchiveFloorPointerDown(event: PointerEvent<HTMLDivElement>) {
     archivePointers.current.set(event.pointerId, { x: event.clientX, y: event.clientY });
-    if (archivePointers.current.size === 2) {
-      const [a, b] = Array.from(archivePointers.current.values());
-      archivePinchStart.current = { distance: pointerDistance(a, b), zoom: archiveZoom };
-      archiveDrag.current = null;
-    }
+    beginArchivePinchIfNeeded();
   }
 
   function onArchiveFloorPointerMove(event: PointerEvent<HTMLDivElement>) {
@@ -308,6 +317,8 @@ export default function Home() {
   });
 
   function onArchivePointerDown(event: PointerEvent<HTMLElement>, page: number) {
+    archivePointers.current.set(event.pointerId, { x: event.clientX, y: event.clientY });
+    if (beginArchivePinchIfNeeded()) return;
     const offset = archiveOffsets[page] ?? { x: 0, y: 0 };
     archiveDrag.current = { page, x: event.clientX, y: event.clientY, offsetX: offset.x, offsetY: offset.y };
     setActiveArchivePage(page);
@@ -325,7 +336,9 @@ export default function Home() {
     }));
   }
 
-  function onArchivePointerUp() {
+  function onArchivePointerUp(event: PointerEvent<HTMLElement>) {
+    archivePointers.current.delete(event.pointerId);
+    if (archivePointers.current.size < 2) archivePinchStart.current = null;
     archiveDrag.current = null;
     setActiveArchivePage(null);
   }
