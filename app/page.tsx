@@ -71,6 +71,7 @@ export default function Home() {
   const dates = useMemo(buildDates, []);
   const [index, setIndex] = useState(() => todayIndex(dates));
   const [photos, setPhotos] = useState<PhotoMap>({});
+  const [photoCount, setPhotoCount] = useState<number | null>(null);
   const [falling, setFalling] = useState(false);
   const [jumping, setJumping] = useState(false);
   const [finished, setFinished] = useState(false);
@@ -118,6 +119,7 @@ export default function Home() {
           });
         });
         assets.sort((a, b) => a.name.localeCompare(b.name));
+        setPhotoCount(assets.length);
         const randomizedPhotos: PhotoMap = {};
         if (assets.length > 0) {
           let previousIndex = -1;
@@ -256,7 +258,6 @@ export default function Home() {
   function pickerDayClass(date: Date) {
     return [
       dateKey(date) === dateKey(current) ? "is-current" : "",
-      photos[dateKey(date)] ? "has-photo" : "",
     ].filter(Boolean).join(" ") || undefined;
   }
 
@@ -265,7 +266,7 @@ export default function Home() {
       <header className="toolbar">
         <div className="toolbar-title">
           <p className="eyebrow">DOUBLE FEATURE</p>
-          <p className="notice">Online Daily Tear-Off Calendar</p>
+          <p className="notice">Online Daily Tear-Off Calendar · {photoCount ?? "—"} Photos</p>
         </div>
         <div className="toolbar-actions">
           <button className={index === 0 && !finished ? "is-selected" : undefined} aria-pressed={index === 0 && !finished} type="button" onClick={() => { setDatePickerOpen(false); jumpTo(0); setRotation(0); }}>START</button>
