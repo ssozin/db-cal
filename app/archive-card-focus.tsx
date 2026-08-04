@@ -51,7 +51,7 @@ const styles = `
   align-items:center;
   justify-content:center;
   width:100%;
-  margin:6px 0 0;
+  margin:12px 0 0;
   padding:0;
   color:#25252a;
   text-align:center;
@@ -136,7 +136,7 @@ body.archive-card-focus-open{overflow:hidden}
   .archive-card-focus-card{width:min(96.8vw,396px);max-width:calc(100vw - 24px)}
   .archive-card-focus-sheet{padding:14px 14px 12px}
   .archive-card-focus-close{top:max(10px,env(safe-area-inset-top));right:10px;font-size:34px}
-  .archive-card-focus-date{margin-top:5px}
+  .archive-card-focus-date{margin-top:10px}
   .archive-card-focus-date span{font-size:clamp(33px,9.27vw,45px)}
   .archive-card-focus-date strong{font-size:clamp(62px,15.3vw,83px)}
   .archive-card-focus-photo{margin-top:12px}
