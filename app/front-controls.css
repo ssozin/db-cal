@@ -3,39 +3,41 @@
   display: none !important;
 }
 
-html body .toolbar-actions > button,
-html body .toolbar-actions > button.is-selected {
-  -webkit-appearance: none !important;
-  appearance: none !important;
-  display: inline-flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  flex: 0 0 30px !important;
-  width: 30px !important;
-  min-width: 30px !important;
-  max-width: 30px !important;
-  height: 30px !important;
-  padding: 0 !important;
-  margin: 0 !important;
-  border: 0 !important;
-  border-radius: 0 !important;
-  outline: 0 !important;
-  background: transparent !important;
-  box-shadow: none !important;
-  color: #a3a3a3 !important;
-  font-size: 11px !important;
-  font-weight: 400 !important;
-  line-height: 1 !important;
-  opacity: 1 !important;
-}
+@media (max-width: 768px) {
+  html body .toolbar-actions > button,
+  html body .toolbar-actions > button.is-selected {
+    -webkit-appearance: none !important;
+    appearance: none !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    flex: 0 0 30px !important;
+    width: 30px !important;
+    min-width: 30px !important;
+    max-width: 30px !important;
+    height: 30px !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    outline: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    color: #a3a3a3 !important;
+    font-size: 11px !important;
+    font-weight: 400 !important;
+    line-height: 1 !important;
+    opacity: 1 !important;
+  }
 
-html body .toolbar-actions > button::before,
-html body .toolbar-actions > button::after {
-  content: none !important;
-  display: none !important;
-}
+  html body .toolbar-actions > button::before,
+  html body .toolbar-actions > button::after {
+    content: none !important;
+    display: none !important;
+  }
 
-html body .toolbar-actions > button.is-selected {
-  color: #111 !important;
-  font-weight: 700 !important;
+  html body .toolbar-actions > button.is-selected {
+    color: #111 !important;
+    font-weight: 700 !important;
+  }
 }
