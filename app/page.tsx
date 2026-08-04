@@ -748,22 +748,52 @@ export default function Home() {
     setCaptureFlash(true);
     setDatePickerOpen(false);
     document.body.classList.add("is-capturing-calendar");
-    // Flatten to a front-facing pose so mobile Safari rasterizes one clean
-    // calendar (not a skewed 3D projection / empty transform tree).
+    // Flatten to a front-facing 2D pad so html-to-image can rasterize on WebKit
+    // (preserve-3d / translateZ trees often come out fully black).
     flushSync(() => setCalendarCapturePose(true));
     window.setTimeout(() => setCaptureFlash(false), 260);
     try {
       await new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
+      await Promise.all(
+        Array.from(node.querySelectorAll("img")).map(async (img) => {
+          try {
+            if (typeof img.decode === "function") await img.decode();
+          } catch {
+            /* still try to paint whatever decoded */
+          }
+        }),
+      );
+      const rect = node.getBoundingClientRect();
       const blob = await htmlToImageToBlob(node, {
         cacheBust: false,
         skipFonts: true,
         pixelRatio: Math.min(2, window.devicePixelRatio || 1.5),
+        width: Math.max(1, Math.round(rect.width)),
+        height: Math.max(1, Math.round(rect.height)),
         backgroundColor: "#ecece9",
+        style: {
+          transform: "none",
+          transformStyle: "flat",
+        },
         filter: (el) => {
           if (!(el instanceof HTMLElement)) return true;
-          return !el.classList.contains("gesture-layer")
-            && !el.classList.contains("capture-flash")
-            && !el.classList.contains("capture-preview");
+          if (
+            el.classList.contains("gesture-layer")
+            || el.classList.contains("capture-flash")
+            || el.classList.contains("capture-preview")
+            || el.classList.contains("calendar-side")
+            || el.classList.contains("back-board")
+            || el.classList.contains("rear-frame")
+            || el.classList.contains("tear-spine")
+            || el.classList.contains("remaining-pages")
+            || el.classList.contains("calendar-depth-shadow")
+            || el.classList.contains("paper-next")
+            || el.classList.contains("binder-top-face")
+            || el.classList.contains("binder-back-face")
+            || el.classList.contains("spine-face")
+            || el.classList.contains("ring-depth")
+          ) return false;
+          return true;
         },
       });
       if (!blob || blob.size === 0) throw new Error("Capture returned no image data");

@@ -255,6 +255,36 @@ body.is-capturing-calendar .toolbar,
 body.is-capturing-calendar .floor-pile-trigger,
 body.is-capturing-calendar .calendar-capture,
 body.is-capturing-calendar .date-picker{visibility:hidden;opacity:0;pointer-events:none}
+/* Flatten the 3D pad for html-to-image — preserve-3d trees often rasterize black on WebKit. */
+body.is-capturing-calendar .calendar-zoom-wrap{transform:none !important}
+body.is-capturing-calendar .calendar-shell,
+body.is-capturing-calendar .calendar-shell *{transform-style:flat !important;perspective:none !important}
+body.is-capturing-calendar .calendar-shell{transform:none !important;filter:none !important}
+body.is-capturing-calendar .paper-stack,
+body.is-capturing-calendar .paper-current,
+body.is-capturing-calendar .paper-next,
+body.is-capturing-calendar .binder,
+body.is-capturing-calendar .ring,
+body.is-capturing-calendar .remaining-pages{transform:none !important;filter:none !important;box-shadow:none !important}
+body.is-capturing-calendar .calendar-side,
+body.is-capturing-calendar .binder:before,
+body.is-capturing-calendar .binder:after,
+body.is-capturing-calendar .binder-top-face,
+body.is-capturing-calendar .binder-back-face,
+body.is-capturing-calendar .back-board,
+body.is-capturing-calendar .rear-frame,
+body.is-capturing-calendar .tear-spine,
+body.is-capturing-calendar .spine-face,
+body.is-capturing-calendar .paper-stack:before,
+body.is-capturing-calendar .paper-stack:after,
+body.is-capturing-calendar .remaining-pages,
+body.is-capturing-calendar .calendar-depth-shadow,
+body.is-capturing-calendar .paper-next,
+body.is-capturing-calendar .gesture-layer,
+body.is-capturing-calendar .ring:before,
+body.is-capturing-calendar .ring-depth{display:none !important}
+body.is-capturing-calendar .paper-current{position:relative;inset:auto;z-index:2}
+body.is-capturing-calendar .paper-stack{height:auto}
 /* Hide chrome while rasterizing so the saved image is just the card layout. */
 .archive-view.is-capturing .archive-toolbar,
 .archive-view.is-capturing .archive-instruction{visibility:hidden;opacity:0}
