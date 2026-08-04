@@ -176,9 +176,9 @@
   }
 
   .archive-card-focus-sheet {
-    aspect-ratio: 382 / 405 !important;
+    aspect-ratio: 382 / 434 !important;
     margin-bottom: 0 !important;
-    padding: 24px 14px 14px !important;
+    padding: 32px 14px 14px !important;
   }
 
   .archive-card-focus-date {
@@ -198,14 +198,15 @@
   }
 
   .archive-card-focus-photo {
-    width: calc(100% - 28px) !important;
-    margin: 14px auto 0 !important;
+    width: 100% !important;
+    margin: 18px 0 0 !important;
   }
 
   .archive-card-focus-footer {
     flex: 1 1 auto !important;
     align-items: flex-end !important;
-    padding: 10px 14px 0 !important;
+    padding: 20px 0 0 !important;
     font-size: 7px !important;
+    line-height: 1.15 !important;
   }
 }
