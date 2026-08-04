@@ -230,7 +230,7 @@ button{font:inherit}
 .archive-mode .floor-pile-trigger{opacity:0;pointer-events:none}
 .archive-view{position:fixed;z-index:30;inset:0;visibility:hidden;overflow:hidden;background:radial-gradient(circle at 42% 34%,#fafaf9,#e8e8e6 74%,#dededb);opacity:0;transform:scale(1.18);transition:visibility 0s linear .65s,opacity .48s ease,transform .72s cubic-bezier(.22,.75,.22,1);pointer-events:none}
 .archive-mode .archive-view{visibility:visible;opacity:1;transform:scale(1);transition-delay:0s;pointer-events:auto}
-.archive-floor{position:absolute;inset:76px 0 0;overflow:hidden;touch-action:none;transform-origin:50% 50%;transition:transform .16s ease-out}
+.archive-floor{position:absolute;inset:76px 0 0;overflow:visible;touch-action:none;transform-origin:50% 50%;transition:transform .16s ease-out}
 .archive-toolbar{position:fixed;z-index:2000;top:22px;left:24px;display:flex;gap:10px}
 .archive-back,.archive-capture{display:grid;width:40px;height:40px;place-items:center;border:1px solid rgba(0,0,0,.2);border-radius:999px;background:rgba(255,255,255,.82);color:#242428;cursor:pointer;backdrop-filter:blur(10px);transition:transform .15s ease,opacity .15s ease}
 .archive-back:hover,.archive-capture:hover:not(:disabled){background:#1f1f22;color:#fff}
