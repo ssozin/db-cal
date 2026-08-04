@@ -83,6 +83,8 @@ export default function Home() {
   const [activeArchivePage, setActiveArchivePage] = useState<number | null>(null);
   const [datePickerOpen, setDatePickerOpen] = useState(false);
   const [pickerMonth, setPickerMonth] = useState(() => dates[todayIndex(dates)].getMonth());
+  // Depth visuals lag the page index so tear/jump animations never snap the shadow.
+  const [depthIndex, setDepthIndex] = useState(() => todayIndex(dates));
   const pointerStart = useRef<{ x: number; y: number; rotation: number } | null>(null);
   const archiveDrag = useRef<{ page: number; x: number; y: number; offsetX: number; offsetY: number } | null>(null);
   const photosRef = useRef<PhotoMap>({});
@@ -95,6 +97,11 @@ export default function Home() {
   useEffect(() => () => Object.values(photosRef.current).forEach((photo) => {
     if (photo.url.startsWith("blob:")) URL.revokeObjectURL(photo.url);
   }), []);
+
+  useEffect(() => {
+    if (falling || jumping) return;
+    setDepthIndex(finished ? dates.length : index);
+  }, [index, falling, jumping, finished, dates.length]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -237,13 +244,19 @@ export default function Home() {
   });
 
   const dayNumber = index + 1;
-  const removedPages = index;
-  const remainingPages = dates.length - index;
+  // Shadow/stack depth follows settled pages only — never mid-tear — so mobile
+  // shadows deepen with fallen sheets instead of popping on each tear.
+  const removedPages = depthIndex;
+  const remainingPages = Math.max(0, dates.length - depthIndex);
   // 365 sheets form one compact physical block; the visible depth shrinks
   // continuously as pages are torn away.
   const fullStackDepth = dates.length * 0.22;
   const removedDepth = (removedPages / dates.length) * fullStackDepth;
   const remainingDepth = Math.max(1.5, (remainingPages / dates.length) * fullStackDepth);
+  const frontShadowY = 5 + removedDepth * 0.34;
+  const frontShadowBlur = 8 + removedDepth * 0.62;
+  const tearShadowDepth = Math.max(1, Math.min(46, removedDepth * 0.72));
+  const tearShadowBlur = 0.6 + removedDepth * 0.025;
   const tornCount = finished ? dates.length : index;
   const archiveStart = 0;
   const archivePages = Array.from({ length: tornCount - archiveStart }, (_, offset) => archiveStart + offset);
@@ -303,10 +316,10 @@ export default function Home() {
           "--remaining-depth-negative": `${-remainingDepth}px`,
           "--full-depth": `${fullStackDepth}px`,
           "--full-depth-negative": `${-fullStackDepth}px`,
-          "--front-shadow-y": `${5 + removedDepth * 0.34}px`,
-          "--front-shadow-blur": `${8 + removedDepth * 0.62}px`,
-          "--tear-shadow-depth": `${Math.max(1, Math.min(46, removedDepth * 0.72))}px`,
-          "--tear-shadow-blur": `${0.6 + removedDepth * 0.025}px`,
+          "--front-shadow-y": `${frontShadowY}px`,
+          "--front-shadow-blur": `${frontShadowBlur}px`,
+          "--tear-shadow-depth": `${tearShadowDepth}px`,
+          "--tear-shadow-blur": `${tearShadowBlur}px`,
           "--drop-x": `${landingX}vw`,
           } as CSSProperties}
         >
@@ -347,6 +360,7 @@ export default function Home() {
               <div className="day-count">DAY {String(Math.min(dayNumber + 1, 365)).padStart(3, "0")} / 365</div>
             </footer>
           </div>
+          <div className="paper-cast-shadow" aria-hidden="true" />
           <div
             className={`paper paper-current ${falling ? "is-falling" : ""} ${jumping ? "is-jumping" : ""}`}
           >
