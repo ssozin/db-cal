@@ -11,7 +11,6 @@ const styles = `
 .toolbar-actions .upload-button{position:relative!important;isolation:isolate}
 .toolbar-actions button.is-selected,
 .toolbar-actions .upload-button.is-selected{color:#242428!important;font-weight:700!important}
-.toolbar-actions button.is-selected:before,
 .toolbar-actions button.is-selected:after,
 .toolbar-actions .upload-button.is-selected:before,
 .toolbar-actions .upload-button.is-selected:after{display:none!important;content:none!important;background:none!important;box-shadow:none!important}
