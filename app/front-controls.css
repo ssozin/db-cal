@@ -151,7 +151,7 @@
   min-height: 0 !important;
   padding: 0 0 16px !important;
   overflow: visible !important;
-  transform: none !important;
+  transform: translateY(8px) !important;
   box-sizing: border-box !important;
 }
 
@@ -163,20 +163,21 @@
 }
 
 .archive-card-focus-sheet .archive-date span {
-  font-size: clamp(40px, 9.2vw, 56px) !important;
+  font-size: clamp(44px, 10.12vw, 62px) !important;
   line-height: .92 !important;
   letter-spacing: -.035em !important;
 }
 
 .archive-card-focus-sheet .archive-date strong {
   margin-top: 5px !important;
-  font-size: clamp(74px, 15vw, 100px) !important;
+  font-size: clamp(81px, 16.5vw, 110px) !important;
   line-height: .88 !important;
   letter-spacing: -.045em !important;
 }
 
 .archive-card-focus-sheet .archive-photo {
   margin: 0 !important;
+  transform: translateY(8px) !important;
 }
 
 .archive-card-focus-sheet .archive-footer {
@@ -196,18 +197,22 @@
 
   .archive-card-focus-sheet .archive-date {
     padding: 0 0 12px !important;
-    transform: none !important;
+    transform: translateY(6px) !important;
   }
 
   .archive-card-focus-sheet .archive-date span {
-    font-size: clamp(35px, 9.8vw, 49px) !important;
+    font-size: clamp(39px, 10.78vw, 54px) !important;
     line-height: .92 !important;
   }
 
   .archive-card-focus-sheet .archive-date strong {
     margin-top: 4px !important;
-    font-size: clamp(66px, 16.5vw, 90px) !important;
+    font-size: clamp(73px, 18.15vw, 99px) !important;
     line-height: .88 !important;
+  }
+
+  .archive-card-focus-sheet .archive-photo {
+    transform: translateY(6px) !important;
   }
 
   .archive-card-focus-sheet .archive-footer {
