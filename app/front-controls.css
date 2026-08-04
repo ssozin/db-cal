@@ -210,7 +210,8 @@
     line-height: 1.15 !important;
   }
 
-  .archive-card-focus-footer > div:first-child {
+  .archive-card-focus-footer > div:first-child,
+  .archive-card-focus-footer > div:last-child {
     transform: translateY(-4px) !important;
   }
 }
