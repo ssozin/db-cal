@@ -76,6 +76,24 @@ function clampZoom(value: number) {
   return Math.max(0.65, Math.min(1.5, Number(value.toFixed(3))));
 }
 
+function isMobileCaptureTarget() {
+  if (typeof navigator === "undefined") return false;
+  return /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)
+    || (navigator.maxTouchPoints > 0 && /Macintosh/i.test(navigator.userAgent));
+}
+
+function downloadBlobFile(blob: Blob, filename: string) {
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  link.rel = "noopener";
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  window.setTimeout(() => URL.revokeObjectURL(url), 60000);
+}
+
 export default function Home() {
   const dates = useMemo(buildDates, []);
   const [index, setIndex] = useState(() => todayIndex(dates));
@@ -89,6 +107,7 @@ export default function Home() {
   const [archiveZoom, setArchiveZoom] = useState(1);
   const [captureFlash, setCaptureFlash] = useState(false);
   const [capturing, setCapturing] = useState(false);
+  const [capturePreview, setCapturePreview] = useState<{ url: string; blob: Blob; name: string } | null>(null);
   const [landingX, setLandingX] = useState(-4.3);
   const [archiveOpen, setArchiveOpen] = useState(false);
   const [archiveOffsets, setArchiveOffsets] = useState<Record<number, { x: number; y: number }>>({});
@@ -109,9 +128,11 @@ export default function Home() {
   const archivePointers = useRef<Map<number, { x: number; y: number }>>(new Map());
   const archivePinchStart = useRef<{ distance: number; zoom: number } | null>(null);
   const gestureLayerRef = useRef<HTMLDivElement | null>(null);
+  const archiveViewRef = useRef<HTMLElement | null>(null);
   const archiveFloorRef = useRef<HTMLDivElement | null>(null);
   const calendarCaptureRef = useRef<HTMLDivElement | null>(null);
   const photosRef = useRef<PhotoMap>({});
+  const capturePreviewUrlRef = useRef<string | null>(null);
   const current = dates[index];
   const currentPhoto = photos[dateKey(current)];
   const next = dates[Math.min(index + 1, dates.length - 1)];
@@ -121,6 +142,9 @@ export default function Home() {
   useEffect(() => () => Object.values(photosRef.current).forEach((photo) => {
     if (photo.url.startsWith("blob:")) URL.revokeObjectURL(photo.url);
   }), []);
+  useEffect(() => () => {
+    if (capturePreviewUrlRef.current) URL.revokeObjectURL(capturePreviewUrlRef.current);
+  }, []);
 
   useEffect(() => {
     setDepthIndex(finished ? dates.length : index);
@@ -347,93 +371,114 @@ export default function Home() {
     setActiveArchivePage(null);
   }
 
-  async function saveCapturedBlob(blob: Blob, filenamePrefix: string) {
-    const file = new File([blob], `${filenamePrefix}-${Date.now()}.png`, { type: "image/png" });
+  function closeCapturePreview() {
+    if (capturePreviewUrlRef.current) {
+      URL.revokeObjectURL(capturePreviewUrlRef.current);
+      capturePreviewUrlRef.current = null;
+    }
+    setCapturePreview(null);
+  }
 
-    if (typeof navigator.share === "function") {
+  function presentCapturedBlob(blob: Blob, filenamePrefix: string) {
+    const name = `${filenamePrefix}-${Date.now()}.png`;
+    // Desktop/web: download immediately. Never window.open(blob) — on iOS
+    // that navigates the current tab away and dumps the user back on reload.
+    if (!isMobileCaptureTarget()) {
+      downloadBlobFile(blob, name);
+      return;
+    }
+    if (capturePreviewUrlRef.current) URL.revokeObjectURL(capturePreviewUrlRef.current);
+    const url = URL.createObjectURL(blob);
+    capturePreviewUrlRef.current = url;
+    setCapturePreview({ url, blob, name });
+  }
+
+  async function saveCapturePreview() {
+    if (!capturePreview) return;
+    const file = new File([capturePreview.blob], capturePreview.name, { type: "image/png" });
+    // Fresh tap on "이미지 저장" re-arms the user-gesture so share()/gallery works.
+    if (typeof navigator.canShare === "function" && navigator.canShare({ files: [file] })) {
       try {
-        await navigator.share({ files: [file] });
+        await navigator.share({ files: [file], title: "Torn pages" });
+        closeCapturePreview();
         return;
-      } catch {
-        // User cancelled, or this browser's share() doesn't support files — fall through.
+      } catch (error) {
+        if (error instanceof DOMException && error.name === "AbortError") return;
       }
     }
-
-    // Direct-to-gallery isn't reliably possible from a plain web page once
-    // share() is unavailable. Ask instead of silently doing nothing — a
-    // fresh click inside confirm()'s response also re-arms window.open()
-    // on browsers that would otherwise block it as a stale-gesture popup.
-    const wantsSave = window.confirm("갤러리에 바로 저장할 수 없어요. 이미지를 저장하시겠습니까?");
-    if (!wantsSave) return;
-
-    const url = URL.createObjectURL(blob);
-    // <a download> is silently unreliable on mobile Safari; opening the
-    // image directly lets a phone's long-press "Save Image" always work.
-    const opened = window.open(url, "_blank");
-    if (!opened) {
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = file.name;
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
+    if (typeof navigator.share === "function") {
+      try {
+        await navigator.share({ files: [file], title: "Torn pages" });
+        closeCapturePreview();
+        return;
+      } catch (error) {
+        if (error instanceof DOMException && error.name === "AbortError") return;
+      }
     }
-    window.setTimeout(() => URL.revokeObjectURL(url), 60000);
+    downloadBlobFile(capturePreview.blob, capturePreview.name);
+    closeCapturePreview();
   }
 
   async function captureArchive() {
-    const node = archiveFloorRef.current;
-    if (!node || capturing) return;
+    const node = archiveViewRef.current;
+    if (!node || capturing || capturePreview) return;
     setCapturing(true);
     setCaptureFlash(true);
+    node.classList.add("is-capturing");
     window.setTimeout(() => setCaptureFlash(false), 260);
     try {
-      // Deep into the year there can be 100s of torn-page cards in the DOM
-      // (most scattered off-screen now that nothing clamps them into view).
-      // html-to-image clones + re-fetches every descendant's images, so
-      // capturing all of them could hang/time out on a phone. Only clone
-      // cards that are at least partially on screen — that's what "capture
-      // the calendar cards" means anyway.
+      // Capture the on-screen archive view (UI chrome hidden via .is-capturing).
+      // Off-screen scattered cards are skipped so phones don't time out.
       const blob = await htmlToImageToBlob(node, {
-        pixelRatio: Math.min(1.5, window.devicePixelRatio || 1.5),
+        pixelRatio: Math.min(isMobileCaptureTarget() ? 1.25 : 2, window.devicePixelRatio || 1.5),
         cacheBust: true,
+        skipFonts: true,
+        width: node.clientWidth,
+        height: node.clientHeight,
         filter: (el) => {
-          if (!(el instanceof HTMLElement) || !el.classList.contains("archive-page")) return true;
-          // Every photo has to be re-fetched and base64-embedded, which is
-          // slow — only bother with cards that are meaningfully on screen
-          // (not just a sliver peeking out from under the pile), or capture
-          // can take so long that a phone's share/save gesture times out.
+          if (!(el instanceof HTMLElement)) return true;
+          if (
+            el.classList.contains("archive-toolbar")
+            || el.classList.contains("archive-instruction")
+            || el.classList.contains("capture-flash")
+            || el.classList.contains("capture-preview")
+          ) return false;
+          if (!el.classList.contains("archive-page")) return true;
           const rect = el.getBoundingClientRect();
           const visibleWidth = Math.max(0, Math.min(rect.right, window.innerWidth) - Math.max(rect.left, 0));
           const visibleHeight = Math.max(0, Math.min(rect.bottom, window.innerHeight) - Math.max(rect.top, 0));
           const area = rect.width * rect.height;
-          return area > 0 && (visibleWidth * visibleHeight) / area > 0.18;
+          return area > 0 && (visibleWidth * visibleHeight) / area > 0.06;
         },
       });
       if (!blob) throw new Error("Capture returned no image data");
-      await saveCapturedBlob(blob, "torn-pages");
+      presentCapturedBlob(blob, "torn-pages");
     } catch (error) {
       console.warn("Could not capture torn pages", error);
+      window.alert("이미지 캡처에 실패했습니다. 다시 시도해 주세요.");
     } finally {
+      node.classList.remove("is-capturing");
       setCapturing(false);
     }
   }
 
   async function captureCalendar() {
     const node = calendarCaptureRef.current;
-    if (!node || capturing) return;
+    if (!node || capturing || capturePreview) return;
     setCapturing(true);
     setCaptureFlash(true);
     window.setTimeout(() => setCaptureFlash(false), 260);
     try {
       const blob = await htmlToImageToBlob(node, {
-        pixelRatio: Math.min(1.5, window.devicePixelRatio || 1.5),
+        pixelRatio: Math.min(isMobileCaptureTarget() ? 1.25 : 2, window.devicePixelRatio || 1.5),
         cacheBust: true,
+        skipFonts: true,
       });
       if (!blob) throw new Error("Capture returned no image data");
-      await saveCapturedBlob(blob, "calendar");
+      presentCapturedBlob(blob, "calendar");
     } catch (error) {
       console.warn("Could not capture calendar", error);
+      window.alert("이미지 캡처에 실패했습니다. 다시 시도해 주세요.");
     } finally {
       setCapturing(false);
     }
@@ -572,7 +617,7 @@ export default function Home() {
               <strong>{String(next.getDate()).padStart(2, "0")}</strong>
             </div>
             <div className={`photo-frame ${nextPhoto ? "has-photo" : ""}`}>
-              {nextPhoto ? <img src={nextPhoto.url} alt="" /> : <div className="photo-placeholder"><span>{dateKey(next).replaceAll("-", "")}</span></div>}
+              {nextPhoto ? <img src={nextPhoto.url} alt="" crossOrigin="anonymous" /> : <div className="photo-placeholder"><span>{dateKey(next).replaceAll("-", "")}</span></div>}
             </div>
             <footer className="paper-footer">
               <div>{nextPhoto ? <><span>{nextPhoto.sourceDate}</span><b className={`event-title${isKorean(nextPhoto.event) ? " is-korean" : ""}`}>{nextPhoto.event}</b></> : <b>NO EVENT ARCHIVE</b>}</div>
@@ -589,7 +634,7 @@ export default function Home() {
             </div>
 
             <div className={`photo-frame ${currentPhoto ? "has-photo" : ""}`}>
-              {currentPhoto ? <img src={currentPhoto.url} alt={`${months[current.getMonth()]} ${current.getDate()}`} /> : <div className="photo-placeholder"><span>{dateKey(current).replaceAll("-", "")}</span></div>}
+              {currentPhoto ? <img src={currentPhoto.url} alt={`${months[current.getMonth()]} ${current.getDate()}`} crossOrigin="anonymous" /> : <div className="photo-placeholder"><span>{dateKey(current).replaceAll("-", "")}</span></div>}
             </div>
 
             <footer className="paper-footer">
@@ -620,12 +665,12 @@ export default function Home() {
         </button>
       )}
 
-      <section className="archive-view" aria-hidden={!archiveOpen}>
+      <section ref={archiveViewRef} className="archive-view" aria-hidden={!archiveOpen}>
         <div className="archive-toolbar">
           <button className="archive-back" type="button" aria-label="Back to calendar" onClick={() => setArchiveOpen(false)}>
             <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M15 5 7 12l8 7" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
           </button>
-          <button className="archive-capture" type="button" aria-label="Capture torn pages" onClick={captureArchive} disabled={capturing}>
+          <button className="archive-capture" type="button" aria-label="Capture torn pages" onClick={captureArchive} disabled={capturing || !!capturePreview}>
             <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M9 4 7.6 6H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-2.6L15 4Z" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" /><circle cx="12" cy="13" r="3.4" fill="none" stroke="currentColor" strokeWidth="1.8" /></svg>
           </button>
         </div>
@@ -673,7 +718,7 @@ export default function Home() {
                   <strong>{String(date.getDate()).padStart(2, "0")}</strong>
                 </div>
                 <div className="archive-photo">
-                  {photo ? <img src={photo.url} alt="" draggable={false} /> : <div className="photo-placeholder"><span>{dateKey(date).replaceAll("-", "")}</span></div>}
+                  {photo ? <img src={photo.url} alt="" draggable={false} crossOrigin="anonymous" /> : <div className="photo-placeholder"><span>{dateKey(date).replaceAll("-", "")}</span></div>}
                 </div>
                 <footer className="archive-footer">
                   <div>{photo ? <><span>{photo.sourceDate}</span><b>{photo.event}</b></> : <b>NO EVENT ARCHIVE</b>}</div>
@@ -684,6 +729,18 @@ export default function Home() {
           })}
         </div>
       </section>
+
+      {capturePreview && (
+        <div className="capture-preview" role="dialog" aria-modal="true" aria-label="Captured image">
+          <div className="capture-preview-panel">
+            <img src={capturePreview.url} alt="Captured torn pages" />
+            <div className="capture-preview-actions">
+              <button type="button" className="capture-preview-save" onClick={saveCapturePreview}>이미지 저장</button>
+              <button type="button" className="capture-preview-cancel" onClick={closeCapturePreview}>닫기</button>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }

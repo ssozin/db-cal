@@ -245,6 +245,18 @@ button{font:inherit}
 .capture-flash{position:fixed;z-index:3000;inset:0;background:#fff;opacity:0;pointer-events:none}
 .capture-flash.is-flashing{animation:captureShutter .26s ease-out}
 @keyframes captureShutter{0%{opacity:0}12%{opacity:.92}100%{opacity:0}}
+/* Hide chrome while rasterizing so the saved image is just the card layout. */
+.archive-view.is-capturing .archive-toolbar,
+.archive-view.is-capturing .archive-instruction{visibility:hidden;opacity:0}
+.capture-preview{position:fixed;z-index:5000;inset:0;display:grid;place-items:center;padding:24px 18px;background:rgba(20,20,24,.55);backdrop-filter:blur(8px)}
+.capture-preview-panel{display:flex;width:min(92vw,420px);max-height:min(88svh,720px);flex-direction:column;gap:14px;padding:14px;border:1px solid rgba(255,255,255,.35);background:rgba(248,248,247,.96);box-shadow:0 22px 48px rgba(0,0,0,.28)}
+.capture-preview-panel img{display:block;width:100%;max-height:min(62svh,520px);object-fit:contain;background:#ecece9}
+.capture-preview-actions{display:flex;gap:8px}
+.capture-preview-save,.capture-preview-cancel{flex:1;min-height:44px;border:1px solid rgba(0,0,0,.18);background:#fff;color:#242428;font:700 12px/1 Arial,sans-serif;letter-spacing:.08em;cursor:pointer}
+.capture-preview-save{background:#1f1f22;border-color:#1f1f22;color:#fff}
+.capture-preview-cancel{background:rgba(255,255,255,.85)}
+.capture-preview-save:active,.capture-preview-cancel:active{transform:scale(.98)}
+@media(max-width:640px){.capture-preview{padding:16px 12px}.capture-preview-panel{width:100%;padding:12px;gap:12px}.capture-preview-save,.capture-preview-cancel{min-height:48px;font-size:13px}}
 .toolbar-actions .capture-button{display:grid;width:34px;height:34px;place-items:center;padding:0;border:1px solid rgba(0,0,0,.18);border-radius:999px;background:rgba(255,255,255,.7)}
 .toolbar-actions .capture-button:hover:not(:disabled){background:#1f1f22;color:#fff;opacity:1}
 .toolbar-actions .capture-button:disabled{opacity:.5;cursor:default}
