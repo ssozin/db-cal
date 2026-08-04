@@ -426,8 +426,11 @@ export default function Home() {
   const fullStackDepth = dates.length * 0.22;
   const removedDepth = (removedPages / dates.length) * fullStackDepth;
   const remainingDepth = Math.max(1.5, (remainingPages / dates.length) * fullStackDepth);
-  const tearShadowDepth = Math.max(1, Math.min(46, removedDepth * 0.72));
-  const tearShadowBlur = 0.6 + removedDepth * 0.025;
+  // No forced minimum here: at removedDepth 0 this must be a true 0, not a
+  // 1px floor, or the front page always shows a thin shadow line even with
+  // nothing torn off yet.
+  const tearShadowDepth = Math.min(46, removedDepth * 0.72);
+  const tearShadowBlur = removedDepth <= 0 ? 0 : 0.6 + removedDepth * 0.025;
   const tornCount = finished ? dates.length : index;
   const archiveStart = 0;
   const archivePages = Array.from({ length: tornCount - archiveStart }, (_, offset) => archiveStart + offset);
