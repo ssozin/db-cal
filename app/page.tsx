@@ -110,6 +110,7 @@ export default function Home() {
   const archivePinchStart = useRef<{ distance: number; zoom: number } | null>(null);
   const gestureLayerRef = useRef<HTMLDivElement | null>(null);
   const archiveFloorRef = useRef<HTMLDivElement | null>(null);
+  const calendarCaptureRef = useRef<HTMLDivElement | null>(null);
   const photosRef = useRef<PhotoMap>({});
   const current = dates[index];
   const currentPhoto = photos[dateKey(current)];
@@ -346,6 +347,40 @@ export default function Home() {
     setActiveArchivePage(null);
   }
 
+  async function saveCapturedBlob(blob: Blob, filenamePrefix: string) {
+    const file = new File([blob], `${filenamePrefix}-${Date.now()}.png`, { type: "image/png" });
+
+    if (typeof navigator.share === "function") {
+      try {
+        await navigator.share({ files: [file] });
+        return;
+      } catch {
+        // User cancelled, or this browser's share() doesn't support files — fall through.
+      }
+    }
+
+    // Direct-to-gallery isn't reliably possible from a plain web page once
+    // share() is unavailable. Ask instead of silently doing nothing — a
+    // fresh click inside confirm()'s response also re-arms window.open()
+    // on browsers that would otherwise block it as a stale-gesture popup.
+    const wantsSave = window.confirm("갤러리에 바로 저장할 수 없어요. 이미지를 저장하시겠습니까?");
+    if (!wantsSave) return;
+
+    const url = URL.createObjectURL(blob);
+    // <a download> is silently unreliable on mobile Safari; opening the
+    // image directly lets a phone's long-press "Save Image" always work.
+    const opened = window.open(url, "_blank");
+    if (!opened) {
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = file.name;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    }
+    window.setTimeout(() => URL.revokeObjectURL(url), 60000);
+  }
+
   async function captureArchive() {
     const node = archiveFloorRef.current;
     if (!node || capturing) return;
@@ -376,32 +411,29 @@ export default function Home() {
         },
       });
       if (!blob) throw new Error("Capture returned no image data");
-      const file = new File([blob], `torn-pages-${Date.now()}.png`, { type: "image/png" });
-
-      if (typeof navigator.share === "function") {
-        try {
-          await navigator.share({ files: [file] });
-          return;
-        } catch {
-          // User cancelled, or this browser's share() doesn't support files — fall through.
-        }
-      }
-
-      const url = URL.createObjectURL(blob);
-      // <a download> is silently unreliable on mobile Safari; opening the
-      // image directly lets a phone's long-press "Save Image" always work.
-      const opened = window.open(url, "_blank");
-      if (!opened) {
-        const link = document.createElement("a");
-        link.href = url;
-        link.download = file.name;
-        document.body.appendChild(link);
-        link.click();
-        link.remove();
-      }
-      window.setTimeout(() => URL.revokeObjectURL(url), 60000);
+      await saveCapturedBlob(blob, "torn-pages");
     } catch (error) {
       console.warn("Could not capture torn pages", error);
+    } finally {
+      setCapturing(false);
+    }
+  }
+
+  async function captureCalendar() {
+    const node = calendarCaptureRef.current;
+    if (!node || capturing) return;
+    setCapturing(true);
+    setCaptureFlash(true);
+    window.setTimeout(() => setCaptureFlash(false), 260);
+    try {
+      const blob = await htmlToImageToBlob(node, {
+        pixelRatio: Math.min(1.5, window.devicePixelRatio || 1.5),
+        cacheBust: true,
+      });
+      if (!blob) throw new Error("Capture returned no image data");
+      await saveCapturedBlob(blob, "calendar");
+    } catch (error) {
+      console.warn("Could not capture calendar", error);
     } finally {
       setCapturing(false);
     }
@@ -450,6 +482,7 @@ export default function Home() {
 
   return (
     <main className={`calendar-stage${archiveOpen ? " archive-mode" : ""}`}>
+      <div className={`capture-flash${captureFlash ? " is-flashing" : ""}`} aria-hidden="true" />
       <header className="toolbar">
         <div className="toolbar-title">
           <p className="eyebrow">DOUBLE FEATURE</p>
@@ -459,6 +492,9 @@ export default function Home() {
           <button className={index === 0 && !finished ? "is-selected" : undefined} aria-pressed={index === 0 && !finished} type="button" onClick={() => { setDatePickerOpen(false); jumpTo(0); setRotation(0); }}>START</button>
           <button className={index === todayIndex(dates) && !finished ? "is-selected" : undefined} aria-pressed={index === todayIndex(dates) && !finished} type="button" onClick={() => { setDatePickerOpen(false); jumpTo(todayIndex(dates)); }}>TODAY</button>
           <button className={datePickerOpen || (index !== 0 && index !== todayIndex(dates) && !finished) ? "is-selected" : undefined} aria-pressed={datePickerOpen} type="button" onClick={() => { setPickerMonth(current.getMonth()); setDatePickerOpen((open) => !open); }}>DATE</button>
+          <button className="capture-button" type="button" aria-label="Capture calendar" onClick={captureCalendar} disabled={capturing}>
+            <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d="M9 4 7.6 6H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-2.6L15 4Z" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" /><circle cx="12" cy="13" r="3.4" fill="none" stroke="currentColor" strokeWidth="1.8" /></svg>
+          </button>
         </div>
       </header>
 
@@ -478,7 +514,7 @@ export default function Home() {
         </section>
       )}
 
-      <div className="calendar-zoom-wrap">
+      <div className="calendar-zoom-wrap" ref={calendarCaptureRef}>
         <section
           className={`calendar-shell${finished ? " is-finished" : ""}`}
           aria-label="2026 tear-off calendar"
@@ -594,7 +630,6 @@ export default function Home() {
           </button>
         </div>
         <p className="archive-instruction">DRAG EACH PAGE SIDEWAYS · PINCH OR SCROLL TO ZOOM</p>
-        <div className={`capture-flash${captureFlash ? " is-flashing" : ""}`} aria-hidden="true" />
         <div
           ref={archiveFloorRef}
           className="archive-floor"

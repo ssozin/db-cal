@@ -4,7 +4,10 @@
 *{box-sizing:border-box}
 html,body{margin:0;min-height:100%;background:var(--stage);color:var(--ink);font-family:"Courier New",Courier,monospace}
 button{font:inherit}
-.calendar-stage{position:relative;display:flex;min-height:100svh;flex-direction:column;align-items:center;justify-content:center;padding:108px 24px 52px;overflow:hidden;background:radial-gradient(circle at 50% 46%,#fff 0,#f3f3f1 38%,#e7e7e5 76%,#dededc 100%)}
+/* overflow:auto (not visible/hidden) so a transform:scale()'d calendar that
+   now extends past the viewport when zoomed in can still be reached by
+   scrolling — visible would just clip it invisibly with nothing to scroll. */
+.calendar-stage{position:relative;display:flex;min-height:100svh;flex-direction:column;align-items:center;justify-content:center;padding:108px 24px 52px;overflow:auto;background:radial-gradient(circle at 50% 46%,#fff 0,#f3f3f1 38%,#e7e7e5 76%,#dededc 100%)}
 .toolbar{position:fixed;top:0;left:0;z-index:20;display:flex;width:100%;align-items:center;justify-content:flex-end;padding:22px 28px;border:0;background:transparent;backdrop-filter:none}
 .toolbar-title{position:absolute;top:20px;left:50%;text-align:center;transform:translateX(-50%)}
 .eyebrow{margin:0 0 5px;font:700 11px/1 Arial,sans-serif;letter-spacing:.18em}.notice{max-width:680px;margin:0;color:#656569;font:11px/1.4 Arial,sans-serif}.toolbar-actions{display:flex;gap:8px}.toolbar button,.toolbar .upload-button,.date-nav button{display:inline-flex;align-items:center;border:1px solid rgba(0,0,0,.18);border-radius:999px;background:rgba(255,255,255,.7);padding:9px 14px;color:#242428;font:700 10px/1 Arial,sans-serif;letter-spacing:.1em;cursor:pointer}.toolbar button:hover,.toolbar .upload-button:hover,.date-nav button:hover:not(:disabled){background:#1f1f22;color:#fff}.toolbar .upload-button{background:#1f1f22;color:#fff}
@@ -90,7 +93,7 @@ button{font:inherit}
 .ring{top:30px;width:31px;height:31px;margin-top:0;transform:translateZ(7px);border:1px solid #7b7c7e;background:linear-gradient(145deg,#c2c3c4 0,#a4a5a7 34%,#898a8c 68%,#707174 100%);box-shadow:inset 1px 1px 1px rgba(255,255,255,.26),inset -1px -1px 2px rgba(43,44,47,.28),0 2px 3px rgba(0,0,0,.32);filter:drop-shadow(0 2px 1px rgba(0,0,0,.22))}
 .ring:before{transform:translateZ(-6px);border-color:#66676a;background:#66676a}
 .ring:after{inset:3px;transform:translateZ(1px);background:linear-gradient(145deg,rgba(235,235,236,.2),rgba(128,129,132,.05) 55%,rgba(45,46,49,.14))}
-.calendar-zoom-wrap{position:relative;width:min(416px,calc(100vw - 70px))}
+.calendar-zoom-wrap{position:relative;width:min(416px,calc(100vw - 70px));touch-action:none}
 .calendar-zoom-wrap .calendar-shell{width:100%}
 .paper-stack{transition:transform 1.06s cubic-bezier(.3,.04,.62,1)}
 /* These depth-linked panels had no transition of their own, so they snapped
@@ -171,7 +174,7 @@ button{font:inherit}
 /* Mobile layout: centered identity, thumb-sized controls and a fully visible calendar. */
 @media(max-width:640px){
   html,body{width:100%;min-height:100%;overflow:hidden}
-  .calendar-stage{min-height:100svh;justify-content:center;padding:116px 10px 70px;overflow:hidden}
+  .calendar-stage{min-height:100svh;justify-content:center;padding:116px 10px 70px;overflow:auto}
   .toolbar{height:104px;padding:0;background:transparent}
   .toolbar-title{top:12px;width:240px}
   .toolbar-title .eyebrow{font-size:14px;letter-spacing:.035em}
@@ -240,6 +243,10 @@ button{font:inherit}
 .capture-flash{position:fixed;z-index:3000;inset:0;background:#fff;opacity:0;pointer-events:none}
 .capture-flash.is-flashing{animation:captureShutter .26s ease-out}
 @keyframes captureShutter{0%{opacity:0}12%{opacity:.92}100%{opacity:0}}
+.toolbar-actions .capture-button{display:grid;width:34px;height:34px;place-items:center;padding:0;border:1px solid rgba(0,0,0,.18);border-radius:999px;background:rgba(255,255,255,.7)}
+.toolbar-actions .capture-button:hover:not(:disabled){background:#1f1f22;color:#fff;opacity:1}
+.toolbar-actions .capture-button:disabled{opacity:.5;cursor:default}
+.toolbar-actions .capture-button:before{content:none}
 .archive-page{position:absolute;display:flex;flex-direction:column;width:clamp(180px,24vw,290px);aspect-ratio:.88;transform:translate(var(--archive-x),var(--archive-y)) rotate(var(--archive-rotate));transform-origin:center;overflow:hidden;background:#f7f6f8;padding:12px;box-shadow:7px 12px 22px rgba(22,22,27,.19);touch-action:none;user-select:none;cursor:grab;transition:box-shadow .18s ease}
 .archive-page.is-active{cursor:grabbing;box-shadow:14px 22px 34px rgba(22,22,27,.25)}
 .archive-date{display:flex;height:44%;flex-direction:column;align-items:center;justify-content:center;color:#25252a;text-align:center}.archive-date span{font-size:clamp(21px,3vw,34px);line-height:.9;letter-spacing:-.025em}.archive-date strong{margin-top:3px;font-size:clamp(34px,5vw,54px);font-weight:400;line-height:.9}
