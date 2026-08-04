@@ -282,11 +282,14 @@ button{font:inherit}
 
 /* A single, continuous gravity arc replaces the previous alternating jolts. */
 .paper-current.is-falling{animation-timing-function:cubic-bezier(.3,.04,.62,1)}
+/* Fade the torn sheet out well before it clears the frame — it must read as
+   "leaving" behind the new day, not as a second fully-legible page stacked
+   underneath it (the visible "pop"). */
 @keyframes tearDropToFloor{
   0%{transform:translate3d(0,0,0) rotateZ(0) scale(1);opacity:1}
   14%{transform:translate3d(calc(var(--drop-x)*.03),4px,10px) rotateZ(-.15deg) scale(.998);opacity:1}
-  38%{transform:translate3d(calc(var(--drop-x)*.25),21vh,70px) rotateZ(-1.8deg) scale(.95);opacity:1}
-  68%{transform:translate3d(calc(var(--drop-x)*.63),52vh,100px) rotateZ(-5deg) scale(.84);opacity:.98}
-  90%{transform:translate3d(calc(var(--drop-x)*.92),69vh,42px) rotateZ(-7.6deg) scale(.75);opacity:.86}
-  100%{transform:translate3d(var(--drop-x),72vh,0) rotateZ(-8.5deg) scale(.73);opacity:0}
+  38%{transform:translate3d(calc(var(--drop-x)*.25),21vh,70px) rotateZ(-1.8deg) scale(.95);opacity:.55;filter:blur(1px)}
+  68%{transform:translate3d(calc(var(--drop-x)*.63),52vh,100px) rotateZ(-5deg) scale(.84);opacity:.18;filter:blur(2.5px)}
+  90%{transform:translate3d(calc(var(--drop-x)*.92),69vh,42px) rotateZ(-7.6deg) scale(.75);opacity:.04;filter:blur(3px)}
+  100%{transform:translate3d(var(--drop-x),72vh,0) rotateZ(-8.5deg) scale(.73);opacity:0;filter:blur(3px)}
 }
