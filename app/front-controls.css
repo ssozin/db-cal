@@ -132,3 +132,24 @@
     font-weight: 700 !important;
   }
 }
+
+.archive-card-focus-date {
+  margin-top: 12px !important;
+}
+
+.archive-card-focus-footer {
+  align-items: center !important;
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+}
+
+@media (max-width: 640px) {
+  .archive-card-focus-date {
+    margin-top: 10px !important;
+  }
+
+  .archive-card-focus-footer {
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+  }
+}
