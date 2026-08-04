@@ -11,7 +11,7 @@ const styles = `
   inset:0;
   display:grid;
   place-items:center;
-  padding:64px 18px 24px;
+  padding:54px 18px 26px;
   background:rgba(18,18,22,.46);
   -webkit-backdrop-filter:blur(12px);
   backdrop-filter:blur(12px);
@@ -22,21 +22,23 @@ const styles = `
 .archive-card-focus-overlay.is-visible{opacity:1}
 .archive-card-focus-card{
   position:relative;
-  width:min(76vw,360px);
+  width:min(72vw,382px);
   max-width:calc(100vw - 36px);
-  max-height:calc(100svh - 96px);
-  transform:scale(.9);
+  max-height:calc(100svh - 86px);
+  transform:scale(.92);
   transition:transform .24s cubic-bezier(.2,.8,.2,1);
-  filter:drop-shadow(0 24px 42px rgba(0,0,0,.34));
+  filter:drop-shadow(0 22px 38px rgba(0,0,0,.32));
 }
 .archive-card-focus-overlay.is-visible .archive-card-focus-card{transform:scale(1)}
 .archive-card-focus-sheet{
   position:relative;
-  display:flex;
+  display:grid;
+  grid-template-rows:44% auto 1fr;
   width:100%;
-  height:auto;
-  flex-direction:column;
+  aspect-ratio:382/430!important;
+  min-height:0;
   overflow:hidden;
+  padding:18px 20px 16px!important;
   background:#f7f6f8;
   color:#25252a;
   cursor:default;
@@ -44,32 +46,46 @@ const styles = `
   pointer-events:none;
   box-shadow:none;
 }
+.archive-card-focus-sheet::before,
+.archive-card-focus-sheet::after,
+.archive-card-focus-sheet .archive-date::before,
+.archive-card-focus-sheet .archive-date::after,
+.archive-card-focus-sheet .archive-photo::before,
+.archive-card-focus-sheet .archive-photo::after,
+.archive-card-focus-sheet .archive-footer::before,
+.archive-card-focus-sheet .archive-footer::after{
+  content:none!important;
+  display:none!important;
+}
 .archive-card-focus-sheet .archive-date{
   display:flex;
-  flex:0 0 44%;
-  height:44%;
+  min-height:0;
   flex-direction:column;
   align-items:center;
   justify-content:center;
+  padding:0 0 10px;
   color:#25252a;
   text-align:center;
 }
 .archive-card-focus-sheet .archive-date span{
-  font-size:clamp(23px,7vw,34px);
-  line-height:.9;
-  letter-spacing:-.025em;
+  display:block;
+  font-size:clamp(29px,7vw,42px);
+  line-height:.92;
+  letter-spacing:-.035em;
 }
 .archive-card-focus-sheet .archive-date strong{
-  margin-top:3px;
-  font-size:clamp(40px,12vw,56px);
+  display:block;
+  margin-top:2px;
+  font-size:clamp(54px,11vw,74px);
   font-weight:400;
-  line-height:.9;
+  line-height:.88;
+  letter-spacing:-.05em;
 }
 .archive-card-focus-sheet .archive-photo{
   position:relative;
   width:100%;
   aspect-ratio:2250/906;
-  flex:0 0 auto;
+  min-height:0;
   overflow:hidden;
   background:#f7f6f8;
   border:0;
@@ -78,9 +94,9 @@ const styles = `
 }
 .archive-card-focus-sheet .archive-photo img{
   display:block;
-  width:calc(100% + 2px);
-  height:calc(100% + 2px);
-  margin:-1px;
+  width:100%;
+  height:100%;
+  margin:0;
   border:0;
   outline:0;
   object-fit:cover;
@@ -89,14 +105,13 @@ const styles = `
 }
 .archive-card-focus-sheet .archive-footer{
   display:flex;
-  flex:1 1 auto;
+  min-height:0;
   align-items:flex-end;
   justify-content:space-between;
-  gap:8px;
-  margin-top:auto;
-  padding-top:8px;
+  gap:10px;
+  padding-top:10px;
   color:#3c3c42;
-  font:6px/1.25 Arial,sans-serif;
+  font:7px/1.25 Arial,sans-serif;
   letter-spacing:.07em;
 }
 .archive-card-focus-sheet .archive-footer div{
@@ -124,11 +139,13 @@ const styles = `
 .archive-card-focus-close:active{transform:scale(.92)}
 body.archive-card-focus-open{overflow:hidden}
 @media(max-width:640px){
-  .archive-card-focus-overlay{padding:58px 14px 18px}
-  .archive-card-focus-card{width:min(78vw,320px);max-width:calc(100vw - 28px)}
+  .archive-card-focus-overlay{padding:54px 14px 20px}
+  .archive-card-focus-card{width:min(78vw,330px);max-width:calc(100vw - 28px)}
+  .archive-card-focus-sheet{padding:16px 18px 14px!important}
   .archive-card-focus-close{top:max(14px,env(safe-area-inset-top));right:14px;font-size:36px}
-  .archive-card-focus-sheet .archive-date span{font-size:clamp(22px,7.2vw,31px)}
-  .archive-card-focus-sheet .archive-date strong{font-size:clamp(38px,12vw,52px)}
+  .archive-card-focus-sheet .archive-date span{font-size:clamp(27px,7.5vw,37px)}
+  .archive-card-focus-sheet .archive-date strong{font-size:clamp(50px,12vw,66px)}
+  .archive-card-focus-sheet .archive-footer{font-size:6px}
 }
 `;
 
@@ -141,16 +158,9 @@ function resolveImageSource(sourceImage: HTMLImageElement | null) {
 }
 
 function buildFocusedSheet(page: HTMLElement) {
-  const sourceRect = page.getBoundingClientRect();
-  const sourceStyle = getComputedStyle(page);
-  const ratioWidth = Math.max(1, page.offsetWidth || sourceRect.width);
-  const ratioHeight = Math.max(1, page.offsetHeight || sourceRect.height);
-
   const sheet = page.cloneNode(true) as HTMLElement;
   sheet.className = "archive-card-focus-sheet";
   sheet.removeAttribute("style");
-  sheet.style.aspectRatio = `${ratioWidth} / ${ratioHeight}`;
-  sheet.style.padding = sourceStyle.padding;
 
   const sourceImages = Array.from(page.querySelectorAll<HTMLImageElement>("img"));
   const clonedImages = Array.from(sheet.querySelectorAll<HTMLImageElement>("img"));
