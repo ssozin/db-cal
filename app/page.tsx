@@ -99,9 +99,8 @@ export default function Home() {
   }), []);
 
   useEffect(() => {
-    if (falling || jumping) return;
     setDepthIndex(finished ? dates.length : index);
-  }, [index, falling, jumping, finished, dates.length]);
+  }, [index, finished, dates.length]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -152,6 +151,9 @@ export default function Home() {
     if (falling || jumping || finished) return;
     setLandingX(targetX);
     setFalling(true);
+    // Grow the depth/shadow the instant the tear starts so it eases in
+    // alongside the falling sheet instead of snapping once it lands.
+    setDepthIndex((value) => Math.min(value + 1, dates.length));
     window.setTimeout(() => {
       if (index >= dates.length - 1) setFinished(true);
       else setIndex((value) => Math.min(value + 1, dates.length - 1));
@@ -168,6 +170,7 @@ export default function Home() {
     }
     if (target === index) return;
     setJumping(true);
+    setDepthIndex(target);
     window.setTimeout(() => {
       setIndex(target);
       setJumping(false);

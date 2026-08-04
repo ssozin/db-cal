@@ -56,7 +56,7 @@ button{font:inherit}
 .calendar-depth-shadow:before{content:"";position:absolute;z-index:1;top:0;right:0;left:0;height:1px;background:radial-gradient(ellipse at center,rgba(102,101,107,.62) 0 40%,transparent 48%) 0 0/5px 1px repeat-x;filter:none}
 .calendar-shell{transform-origin:50% 50%;transition:transform .16s ease-out}
 .paper-stack:before{border-bottom:0}
-.calendar-depth-shadow{transform:none;transition:height .72s cubic-bezier(.22,.72,.2,1),filter .72s ease,opacity .2s ease;will-change:height,filter}
+.calendar-depth-shadow{transform:none;transition:height 1.06s cubic-bezier(.3,.04,.62,1),filter 1.06s ease,opacity .2s ease;will-change:height,filter}
 .paper-current.is-falling{animation:tearRelease .82s cubic-bezier(.46,.01,.72,.4) forwards;clip-path:polygon(0 1px,8% 0,18% 1px,29% 0,41% 2px,53% 0,65% 1px,77% 0,89% 1px,100% 0,100% 100%,0 100%)}
 .paper-current.is-falling:before{display:block;top:0;height:3px;background:repeating-linear-gradient(90deg,rgba(212,211,215,.8) 0 2px,transparent 2px 6px,rgba(246,245,247,.9) 6px 8px);clip-path:none;filter:drop-shadow(0 1px 1px rgba(0,0,0,.12));opacity:.9}
 @keyframes tearRelease{0%{transform:translate3d(0,0,0) rotate(0);opacity:1}16%{transform:translate3d(0,1px,4px) rotate(.08deg)}34%{transform:translate3d(0,8px,12px) rotate(-.28deg)}48%{transform:translate3d(0,20px,24px) rotate(.42deg)}100%{transform:translate3d(0,120vh,80px) rotate(-1.2deg);opacity:.2}}
@@ -92,7 +92,7 @@ button{font:inherit}
 .ring:after{inset:3px;transform:translateZ(1px);background:linear-gradient(145deg,rgba(235,235,236,.2),rgba(128,129,132,.05) 55%,rgba(45,46,49,.14))}
 .calendar-zoom-wrap{position:relative;width:min(416px,calc(100vw - 70px))}
 .calendar-zoom-wrap .calendar-shell{width:100%}
-.paper-stack{transition:transform .72s cubic-bezier(.22,.72,.2,1)}
+.paper-stack{transition:transform 1.06s cubic-bezier(.3,.04,.62,1)}
 .paper-current.is-jumping{animation:jumpPageAway .38s cubic-bezier(.4,0,.7,1) forwards;pointer-events:none}
 @keyframes jumpPageAway{0%,58%{transform:translate3d(0,0,0);opacity:1}78%{transform:translate3d(0,5px,10px);opacity:.72}100%{transform:translate3d(0,18px,28px);opacity:0}}
 
@@ -124,7 +124,7 @@ button{font:inherit}
   border-radius:inherit;
   background:transparent;
   box-shadow:3px var(--front-shadow-y) var(--front-shadow-blur) rgba(18,18,22,.22);
-  transition:box-shadow .72s cubic-bezier(.22,.72,.2,1);
+  transition:box-shadow 1.06s cubic-bezier(.3,.04,.62,1);
   will-change:box-shadow;
 }
 .paper-current{box-shadow:2px 2px 3px rgba(0,0,0,.1);transition:box-shadow .28s ease}
