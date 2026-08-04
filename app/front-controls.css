@@ -134,8 +134,8 @@
 }
 
 .archive-card-focus-card {
+  overflow: hidden !important;
   transform: scale(1.104) !important;
-  clip-path: inset(0 0 34px 0);
 }
 
 .archive-card-focus-overlay.is-visible .archive-card-focus-card {
@@ -144,6 +144,7 @@
 
 .archive-card-focus-sheet {
   aspect-ratio: auto !important;
+  margin-bottom: -34px !important;
   padding: 28px 18px 8px !important;
 }
 
@@ -159,11 +160,8 @@
 }
 
 @media (max-width: 640px) {
-  .archive-card-focus-card {
-    clip-path: inset(0 0 28px 0);
-  }
-
   .archive-card-focus-sheet {
+    margin-bottom: -28px !important;
     padding: 22px 14px 6px !important;
   }
 
