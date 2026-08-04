@@ -178,8 +178,9 @@ button{font:inherit}
   .toolbar-title{top:12px;width:240px}
   .toolbar-title .eyebrow{font-size:14px;letter-spacing:.035em}
   .toolbar-title .notice{max-width:220px;margin-top:4px;font-size:calc(14px / 1.618)}
-  .toolbar-actions{top:58px;right:auto;left:50%;display:flex;width:max-content;max-width:calc(100vw - 16px);justify-content:center;gap:6px;transform:translateX(-50%)}
-  .toolbar button,.toolbar .upload-button{min-height:34px;padding:8px 11px;font-size:8px;white-space:nowrap}
+  .toolbar-actions{top:58px;right:auto;left:50%;display:flex;align-items:center;width:max-content;max-width:calc(100vw - 16px);justify-content:center;gap:18px;transform:translateX(-50%)}
+  .toolbar-actions button,.toolbar-actions .upload-button{min-height:0;padding:4px 0;border:0;border-radius:0;background:transparent;box-shadow:none;color:rgba(34,34,36,.38);font:500 11px/1 Arial,sans-serif;letter-spacing:.14em;white-space:nowrap}
+  .toolbar-actions button:hover,.toolbar-actions .upload-button:hover{background:transparent;color:rgba(34,34,36,.7)}
   .calendar-zoom-wrap{top:-12px;width:min(86vw,360px)}
   .calendar-shell{width:100%}
   .binder{height:72px}
@@ -201,8 +202,8 @@ button{font:inherit}
 }
 @media(max-width:380px){
   .calendar-stage{padding-right:6px;padding-left:6px}
-  .toolbar-actions{gap:4px}
-  .toolbar button,.toolbar .upload-button{padding-right:8px;padding-left:8px;font-size:7px}
+  .toolbar-actions{gap:14px}
+  .toolbar-actions button,.toolbar-actions .upload-button{font-size:10px}
   .calendar-zoom-wrap{width:88vw}
   .paper-stack{height:calc(88vw*1.082)}
 }
@@ -295,7 +296,7 @@ button{font:inherit}
 }
 @media(max-width:640px){
   .ring{top:33.333%;width:7.452%;height:auto;aspect-ratio:1}
-  .toolbar-actions button.is-selected{border-color:#1f1f22;background:#1f1f22;color:#fff}
+  .toolbar-actions button.is-selected{border:0;background:transparent;color:#1f1f22;font-weight:700;box-shadow:inset 0 -1px 0 #1f1f22}
 }
 .date-picker{position:fixed;z-index:80;top:50%;left:128px;width:248px;transform:translateY(-50%);border:1px solid rgba(25,25,29,.13);background:rgba(248,248,247,.96);padding:16px;box-shadow:0 18px 42px rgba(25,25,29,.16);backdrop-filter:blur(14px)}
 .date-picker header{display:grid;grid-template-columns:28px 1fr 28px;align-items:center;margin-bottom:14px}.date-picker header strong{text-align:center;font:700 12px/1 Arial,sans-serif;letter-spacing:.12em}.date-picker header small{color:#8d8d91;font-size:8px;font-weight:500}.date-picker header button{display:grid;width:28px;height:28px;place-items:center;border:0;background:transparent;color:#242428;cursor:pointer}.date-picker header button:disabled{opacity:.2;cursor:default}
