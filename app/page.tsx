@@ -76,6 +76,56 @@ function clampZoom(value: number) {
   return Math.max(0.65, Math.min(1.5, Number(value.toFixed(3))));
 }
 
+let tearAudioContext: AudioContext | null = null;
+
+function getTearAudioContext() {
+  if (typeof window === "undefined") return null;
+  const AudioCtx = window.AudioContext || (window as typeof window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+  if (!AudioCtx) return null;
+  if (!tearAudioContext) tearAudioContext = new AudioCtx();
+  if (tearAudioContext.state === "suspended") void tearAudioContext.resume();
+  return tearAudioContext;
+}
+
+function unlockTearAudio() {
+  getTearAudioContext();
+}
+
+/** Short synthesized paper-tear for each ripped page (no audio asset needed). */
+function playTearSound() {
+  const ctx = getTearAudioContext();
+  if (!ctx) return;
+  const now = ctx.currentTime;
+  const duration = 0.32;
+  const buffer = ctx.createBuffer(1, Math.floor(ctx.sampleRate * duration), ctx.sampleRate);
+  const data = buffer.getChannelData(0);
+  for (let i = 0; i < data.length; i += 1) {
+    const t = i / data.length;
+    const crackle = t > 0.07 && t < 0.15 ? 0.4 * Math.exp(-(t - 0.07) * 28) : 0;
+    const envelope = Math.exp(-t * 12) * (0.5 + 0.5 * Math.sin(t * 36)) + crackle;
+    data[i] = (Math.random() * 2 - 1) * envelope * 0.62;
+  }
+  const source = ctx.createBufferSource();
+  source.buffer = buffer;
+  const band = ctx.createBiquadFilter();
+  band.type = "bandpass";
+  band.frequency.value = 1700;
+  band.Q.value = 0.75;
+  const high = ctx.createBiquadFilter();
+  high.type = "highpass";
+  high.frequency.value = 550;
+  const gain = ctx.createGain();
+  gain.gain.setValueAtTime(0.0001, now);
+  gain.gain.exponentialRampToValueAtTime(0.85, now + 0.014);
+  gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+  source.connect(band);
+  band.connect(high);
+  high.connect(gain);
+  gain.connect(ctx.destination);
+  source.start(now);
+  source.stop(now + duration + 0.03);
+}
+
 function isMobileCaptureTarget() {
   if (typeof navigator === "undefined") return false;
   return /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)
@@ -367,6 +417,7 @@ export default function Home() {
     if (falling || jumping || finished) return;
     setLandingX(targetX);
     setFalling(true);
+    playTearSound();
     // Grow the depth/shadow the instant the tear starts so it eases in
     // alongside the falling sheet instead of snapping once it lands.
     setDepthIndex((value) => Math.min(value + 1, dates.length));
@@ -400,6 +451,7 @@ export default function Home() {
   }
 
   function onPointerDown(event: PointerEvent<HTMLDivElement>) {
+    unlockTearAudio();
     activePointers.current.set(event.pointerId, { x: event.clientX, y: event.clientY });
     if (activePointers.current.size === 2) {
       const [a, b] = Array.from(activePointers.current.values());
