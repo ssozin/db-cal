@@ -173,7 +173,7 @@
 
 .archive-card-focus-sheet .archive-footer {
   align-items: flex-start !important;
-  padding-top: 10px !important;
+  padding-top: 5px !important;
 }
 
 @media (max-width: 640px) {
@@ -204,6 +204,6 @@
 
   .archive-card-focus-sheet .archive-footer {
     align-items: flex-start !important;
-    padding-top: 10px !important;
+    padding-top: 5px !important;
   }
 }
