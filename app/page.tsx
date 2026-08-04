@@ -398,7 +398,7 @@ export default function Home() {
         </section>
       )}
 
-      <div className="calendar-zoom-wrap" style={{ zoom } as CSSProperties}>
+      <div className="calendar-zoom-wrap">
         <section
           className={`calendar-shell${finished ? " is-finished" : ""}`}
           aria-label="2026 tear-off calendar"
@@ -407,7 +407,10 @@ export default function Home() {
           // some mobile WebKit builds, which drops the 3D depth stacking for
           // translateZ'd shadow layers until the user rotates the calendar.
           // Nudging by a hair keeps the 3D context alive at rest too.
-          transform: `rotateY(${rotation || 0.01}deg)`,
+          // Zoom is a visual transform:scale (not the CSS `zoom` property) so
+          // pinching/scrolling magnifies in place without reflowing anything
+          // around the calendar.
+          transform: `rotateY(${rotation || 0.01}deg) scale(${zoom})`,
           "--removed-depth": `${removedDepth}px`,
           "--removed-depth-negative": `${-removedDepth}px`,
           "--remaining-depth": `${remainingDepth}px`,
@@ -503,7 +506,9 @@ export default function Home() {
         <div
           ref={archiveFloorRef}
           className="archive-floor"
-          style={{ zoom: archiveZoom } as CSSProperties}
+          // transform:scale (not CSS `zoom`) keeps every card's layout/position
+          // exactly where it was — only the visual size changes, in place.
+          style={{ transform: `scale(${archiveZoom})` } as CSSProperties}
           onPointerDown={onArchiveFloorPointerDown}
           onPointerMove={onArchiveFloorPointerMove}
           onPointerUp={onArchiveFloorPointerUp}
