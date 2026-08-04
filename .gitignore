@@ -1,0 +1,12 @@
+# Dependencies
+/node_modules
+
+# Build output / artifacts
+/dist
+/out
+/.next
+/.vinext
+
+# vinext / wrangler / sites runtime (disposable)
+/.wrangler
+/.sites-runtime
