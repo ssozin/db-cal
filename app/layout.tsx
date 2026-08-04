@@ -4,6 +4,7 @@ import ArchivePerformanceFix from "./archive-performance-fix";
 import ArchiveCardFocus from "./archive-card-focus";
 import CalendarExperienceFix from "./calendar-experience-fix";
 import CalendarVisualTuning from "./calendar-visual-tuning";
+import DateButtonReopen from "./date-button-reopen";
 import "./globals.css";
 import "./front-controls.css";
 
@@ -50,6 +51,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <ArchiveCardFocus />
         <CalendarExperienceFix />
         <CalendarVisualTuning />
+        <DateButtonReopen />
       </body>
     </html>
   );
