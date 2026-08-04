@@ -86,6 +86,8 @@ export default function Home() {
   const [rotation, setRotation] = useState(0);
   const [zoom, setZoom] = useState(1);
   const [archiveZoom, setArchiveZoom] = useState(1);
+  const [captureFlash, setCaptureFlash] = useState(false);
+  const [capturing, setCapturing] = useState(false);
   const [landingX, setLandingX] = useState(-4.3);
   const [archiveOpen, setArchiveOpen] = useState(false);
   const [archiveOffsets, setArchiveOffsets] = useState<Record<number, { x: number; y: number }>>({});
@@ -343,6 +345,44 @@ export default function Home() {
     setActiveArchivePage(null);
   }
 
+  async function captureArchive() {
+    const node = archiveFloorRef.current;
+    if (!node || capturing) return;
+    setCapturing(true);
+    setCaptureFlash(true);
+    window.setTimeout(() => setCaptureFlash(false), 260);
+    try {
+      // Let the shutter-flash overlay paint (it lives outside archive-floor,
+      // so it's never part of the capture) before we snapshot the pages.
+      await new Promise((resolve) => window.setTimeout(resolve, 90));
+      const { toBlob } = await import("html-to-image");
+      const blob = await toBlob(node, { pixelRatio: 2, cacheBust: true });
+      if (!blob) return;
+      const file = new File([blob], `torn-pages-${Date.now()}.png`, { type: "image/png" });
+      const nav = navigator as Navigator & { canShare?: (data?: ShareData) => boolean };
+      if (nav.canShare?.({ files: [file] })) {
+        try {
+          await navigator.share({ files: [file] });
+          return;
+        } catch {
+          // User cancelled the share sheet or it's unsupported — fall back to download below.
+        }
+      }
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = file.name;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.warn("Could not capture torn pages", error);
+    } finally {
+      setCapturing(false);
+    }
+  }
+
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
       if (event.key === "ArrowDown" || event.key === "ArrowRight" || event.key === " ") nextDay();
@@ -514,8 +554,16 @@ export default function Home() {
       )}
 
       <section className="archive-view" aria-hidden={!archiveOpen}>
-        <button className="archive-back" type="button" onClick={() => setArchiveOpen(false)}>BACK TO CALENDAR</button>
+        <div className="archive-toolbar">
+          <button className="archive-back" type="button" aria-label="Back to calendar" onClick={() => setArchiveOpen(false)}>
+            <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M15 5 7 12l8 7" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+          </button>
+          <button className="archive-capture" type="button" aria-label="Capture torn pages" onClick={captureArchive} disabled={capturing}>
+            <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M9 4 7.6 6H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-2.6L15 4Z" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" /><circle cx="12" cy="13" r="3.4" fill="none" stroke="currentColor" strokeWidth="1.8" /></svg>
+          </button>
+        </div>
         <p className="archive-instruction">DRAG EACH PAGE SIDEWAYS · PINCH OR SCROLL TO ZOOM</p>
+        <div className={`capture-flash${captureFlash ? " is-flashing" : ""}`} aria-hidden="true" />
         <div
           ref={archiveFloorRef}
           className="archive-floor"
