@@ -135,6 +135,7 @@
 
 .archive-card-focus-card {
   transform: scale(1.104) !important;
+  clip-path: inset(0 0 34px 0);
 }
 
 .archive-card-focus-overlay.is-visible .archive-card-focus-card {
@@ -158,6 +159,10 @@
 }
 
 @media (max-width: 640px) {
+  .archive-card-focus-card {
+    clip-path: inset(0 0 28px 0);
+  }
+
   .archive-card-focus-sheet {
     padding: 22px 14px 6px !important;
   }
