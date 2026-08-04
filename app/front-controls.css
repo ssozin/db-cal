@@ -143,7 +143,7 @@
 
 .archive-card-focus-sheet {
   aspect-ratio: auto !important;
-  padding: 18px !important;
+  padding: 28px 18px 8px !important;
 }
 
 .archive-card-focus-date {
@@ -159,7 +159,7 @@
 
 @media (max-width: 640px) {
   .archive-card-focus-sheet {
-    padding: 14px !important;
+    padding: 22px 14px 6px !important;
   }
 
   .archive-card-focus-date {
