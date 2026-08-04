@@ -248,15 +248,15 @@ button{font:inherit}
 .toolbar-actions .capture-button:before{content:none}
 .archive-page{--archive-gap:8px;position:absolute;display:flex;flex-direction:column;width:clamp(180px,24vw,290px);aspect-ratio:.88;transform:translate(var(--archive-x),var(--archive-y)) rotate(var(--archive-rotate));transform-origin:center;overflow:hidden;background:#f7f6f8;padding:12px 12px var(--archive-gap);box-shadow:7px 12px 22px rgba(22,22,27,.19);touch-action:none;user-select:none;cursor:grab;transition:box-shadow .18s ease}
 .archive-page.is-active{cursor:grabbing;box-shadow:14px 22px 34px rgba(22,22,27,.25)}
-/* Extra vertical room lives in the date block so photo→footer and footer→edge
-   stay the same fixed --archive-gap, with the text sitting a touch higher. */
-.archive-date{display:flex;flex:1 1 auto;height:auto;min-height:0;flex-direction:column;align-items:center;justify-content:center;color:#25252a;text-align:center}.archive-date span{font-size:clamp(21px,3vw,34px);line-height:.9;letter-spacing:-.025em}.archive-date strong{margin-top:3px;font-size:clamp(34px,5vw,54px);font-weight:400;line-height:.9}
-/* Paper-colored fill + absolute bleed img kills the 1px black hairline that
-   shows on the right edge when cards are rotated (subpixel gap / dark peek). */
-.archive-photo{position:relative;width:100%;aspect-ratio:2250/906;overflow:hidden;background:#f7f6f8;border:0;outline:0;box-shadow:none}.archive-photo img,.archive-photo .photo-placeholder{position:absolute;inset:-2px;display:block;width:calc(100% + 4px);height:calc(100% + 4px);margin:0;border:0;outline:0;box-shadow:none;object-fit:cover;pointer-events:none;max-width:none}
+/* Keep the original date proportion so the photo stays up; only the
+   photo↔footer / footer↔edge gaps are equalized (no margin-top:auto). */
+.archive-date{display:flex;flex:0 0 44%;height:44%;flex-direction:column;align-items:center;justify-content:center;color:#25252a;text-align:center}.archive-date span{font-size:clamp(21px,3vw,34px);line-height:.9;letter-spacing:-.025em}.archive-date strong{margin-top:3px;font-size:clamp(34px,5vw,54px);font-weight:400;line-height:.9}
+/* Paper-colored fill + absolute bleed img kills the black hairline on the
+   photo edges when cards are rotated. */
+.archive-photo{position:relative;flex:0 0 auto;width:100%;aspect-ratio:2250/906;overflow:hidden;background:#f7f6f8;border:0;outline:0;box-shadow:none}.archive-photo img,.archive-photo .photo-placeholder{position:absolute;inset:-2px;display:block;width:calc(100% + 4px);height:calc(100% + 4px);margin:0;border:0;outline:0;box-shadow:none;object-fit:cover;pointer-events:none;max-width:none}
 .archive-photo .photo-placeholder{place-items:center;background:radial-gradient(circle at 72% 40%,rgba(161,255,199,.42),transparent 18%),radial-gradient(circle at 32% 72%,rgba(91,197,150,.4),transparent 26%),linear-gradient(135deg,#13251f,#315f4f 55%,#101714)}
 .archive-footer{display:flex;align-items:flex-end;justify-content:space-between;gap:8px;flex:0 0 auto;margin-top:var(--archive-gap);padding:0;color:#3c3c42;font:6px/1.2 Arial,sans-serif;letter-spacing:.07em}.archive-footer div{display:flex;max-width:68%;flex-direction:column;gap:1px}.archive-footer b{text-transform:uppercase}
-@media(max-width:640px){.archive-page{--archive-gap:8px;width:170px;padding:9px 9px var(--archive-gap)}.archive-floor{inset-top:66px}.archive-instruction{display:none}.floor-pile-trigger{bottom:10px}.archive-toolbar{top:14px;left:14px}.archive-back,.archive-capture{width:36px;height:36px}}
+@media(max-width:640px){.archive-page{--archive-gap:8px;width:170px;padding:9px 9px var(--archive-gap)}.archive-date{flex-basis:45%;height:45%}.archive-floor{inset-top:66px}.archive-instruction{display:none}.floor-pile-trigger{bottom:10px}.archive-toolbar{top:14px;left:14px}.archive-back,.archive-capture{width:36px;height:36px}}
 .paper-footer div:first-child{align-items:flex-start;text-align:left}
 .paper-footer div:first-child span,.paper-footer div:first-child b{display:block;width:100%;text-align:left}
 .day-count{position:relative;top:2px;align-self:flex-end}
