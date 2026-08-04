@@ -138,17 +138,17 @@
 }
 
 .archive-card-focus-sheet {
-  grid-template-rows: 45% auto 1fr !important;
-  padding: 16px 18px 16px !important;
+  grid-template-rows: 46% auto 1fr !important;
+  padding: 14px 18px 16px !important;
 }
 
 .archive-card-focus-sheet .archive-date {
   display: flex !important;
   flex-direction: column !important;
   align-items: center !important;
-  justify-content: flex-end !important;
+  justify-content: center !important;
   min-height: 0 !important;
-  padding: 0 0 2px !important;
+  padding: 4px 0 8px !important;
   overflow: visible !important;
   transform: none !important;
   box-sizing: border-box !important;
@@ -162,16 +162,16 @@
 }
 
 .archive-card-focus-sheet .archive-date span {
-  font-size: clamp(48px, 10.8vw, 68px) !important;
-  line-height: .92 !important;
-  letter-spacing: -.035em !important;
+  font-size: clamp(38px, 8.5vw, 50px) !important;
+  line-height: .94 !important;
+  letter-spacing: -.03em !important;
 }
 
 .archive-card-focus-sheet .archive-date strong {
   margin-top: 3px !important;
-  font-size: clamp(88px, 17.8vw, 120px) !important;
-  line-height: .86 !important;
-  letter-spacing: -.045em !important;
+  font-size: clamp(70px, 14vw, 84px) !important;
+  line-height: .9 !important;
+  letter-spacing: -.04em !important;
 }
 
 .archive-card-focus-sheet .archive-photo {
@@ -190,25 +190,25 @@
   }
 
   .archive-card-focus-sheet {
-    grid-template-rows: 45% auto 1fr !important;
-    padding: 14px !important;
+    grid-template-rows: 46% auto 1fr !important;
+    padding: 12px 14px 14px !important;
   }
 
   .archive-card-focus-sheet .archive-date {
-    justify-content: flex-end !important;
-    padding: 0 0 2px !important;
+    justify-content: center !important;
+    padding: 3px 0 7px !important;
     transform: none !important;
   }
 
   .archive-card-focus-sheet .archive-date span {
-    font-size: clamp(42px, 11.5vw, 58px) !important;
-    line-height: .92 !important;
+    font-size: clamp(34px, 9.2vw, 44px) !important;
+    line-height: .94 !important;
   }
 
   .archive-card-focus-sheet .archive-date strong {
     margin-top: 3px !important;
-    font-size: clamp(78px, 19vw, 106px) !important;
-    line-height: .86 !important;
+    font-size: clamp(62px, 15.5vw, 76px) !important;
+    line-height: .9 !important;
   }
 
   .archive-card-focus-sheet .archive-photo {
