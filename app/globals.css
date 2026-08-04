@@ -164,7 +164,7 @@ button{font:inherit}
 .floor-pile-trigger i:nth-child(1){transform:translateX(-54%) rotate(-5deg)}
 .floor-pile-trigger i:nth-child(2){transform:translateX(-46%) rotate(4deg)}
 .floor-pile-trigger i:nth-child(3){transform:translateX(-50%) translateY(2px)}
-.floor-pile-trigger span{position:absolute;right:0;bottom:0;left:0;text-align:center;font:700 6px/1 Arial,sans-serif;letter-spacing:.1em}
+.floor-pile-trigger span{position:absolute;right:0;bottom:0;left:0;text-align:center;font:700 7px/1 Arial,sans-serif;letter-spacing:.1em}
 .floor-pile-trigger:hover i:nth-child(3){transform:translateX(-50%) translateY(-1px)}
 @media(max-width:640px){.calendar-zoom-wrap{top:-24px}.toolbar-title{top:29px}.floor-pile-trigger{bottom:12px}}
 
