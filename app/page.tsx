@@ -1,6 +1,7 @@
 "use client";
 
 import { CSSProperties, PointerEvent, useEffect, useMemo, useRef, useState } from "react";
+import { flushSync } from "react-dom";
 import { toBlob as htmlToImageToBlob } from "html-to-image";
 
 type PhotoMap = Record<string, { url: string; name: string; event: string; sourceDate: string }>;
@@ -393,6 +394,64 @@ async function captureArchiveViewport(floorScale: number) {
   return blob;
 }
 
+/** Full-viewport wallpaper: keep screen height, strip chrome, leave top margin. */
+async function composeCalendarWallpaper(padBlob: Blob) {
+  const padUrl = URL.createObjectURL(padBlob);
+  try {
+    const padImage = await new Promise<HTMLImageElement>((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => resolve(img);
+      img.onerror = () => reject(new Error("Could not decode calendar pad"));
+      img.src = padUrl;
+    });
+
+    const cssWidth = Math.max(1, Math.round(window.innerWidth));
+    const cssHeight = Math.max(1, Math.round(window.innerHeight));
+    const dpr = Math.min(2, window.devicePixelRatio || 1.5);
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.max(1, Math.floor(cssWidth * dpr));
+    canvas.height = Math.max(1, Math.floor(cssHeight * dpr));
+    const ctx = canvas.getContext("2d");
+    if (!ctx) throw new Error("Canvas unavailable");
+    ctx.scale(dpr, dpr);
+
+    // Match the live stage wash so the save reads as the page without UI.
+    const gradient = ctx.createRadialGradient(
+      cssWidth * 0.5,
+      cssHeight * 0.46,
+      0,
+      cssWidth * 0.5,
+      cssHeight * 0.46,
+      Math.max(cssWidth, cssHeight),
+    );
+    gradient.addColorStop(0, "#ffffff");
+    gradient.addColorStop(0.38, "#f3f3f1");
+    gradient.addColorStop(0.76, "#e7e7e5");
+    gradient.addColorStop(1, "#dededc");
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, cssWidth, cssHeight);
+
+    // Top margin clears status-bar / Dynamic Island area for wallpaper use.
+    // Calendar keeps its on-screen visual width; vertical canvas = full screen.
+    const sidePad = cssWidth * 0.09;
+    const drawWidth = Math.min(cssWidth - sidePad * 2, cssWidth * 0.82);
+    const drawHeight = drawWidth * (padImage.naturalHeight / Math.max(1, padImage.naturalWidth));
+    const topMargin = Math.max(cssHeight * 0.14, 72);
+    const maxBottom = cssHeight - Math.max(cssHeight * 0.1, 48);
+    const fittedHeight = Math.min(drawHeight, maxBottom - topMargin);
+    const fittedWidth = fittedHeight * (padImage.naturalWidth / Math.max(1, padImage.naturalHeight));
+    const x = (cssWidth - fittedWidth) / 2;
+    const y = topMargin;
+    ctx.drawImage(padImage, x, y, fittedWidth, fittedHeight);
+
+    const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/png"));
+    if (!blob || blob.size === 0) throw new Error("Wallpaper compose returned no image data");
+    return blob;
+  } finally {
+    URL.revokeObjectURL(padUrl);
+  }
+}
+
 export default function Home() {
   const dates = useMemo(buildDates, []);
   const [index, setIndex] = useState(() => todayIndex(dates));
@@ -431,10 +490,12 @@ export default function Home() {
   const archivePointers = useRef<Map<number, { x: number; y: number }>>(new Map());
   const archivePinchStart = useRef<{ distance: number; zoom: number } | null>(null);
   const gestureLayerRef = useRef<HTMLDivElement | null>(null);
+  const calendarCaptureRef = useRef<HTMLElement | null>(null);
   const archiveViewRef = useRef<HTMLElement | null>(null);
   const archiveFloorRef = useRef<HTMLDivElement | null>(null);
   const photosRef = useRef<PhotoMap>({});
   const capturePreviewUrlRef = useRef<string | null>(null);
+  const [calendarCapturePose, setCalendarCapturePose] = useState(false);
   const current = dates[index];
   const currentPhoto = photos[dateKey(current)];
   const next = dates[Math.min(index + 1, dates.length - 1)];
@@ -767,7 +828,7 @@ export default function Home() {
     // Fresh tap on "이미지 저장" re-arms the user-gesture so share()/gallery works.
     if (typeof navigator.canShare === "function" && navigator.canShare({ files: [file] })) {
       try {
-        await navigator.share({ files: [file], title: "Torn pages" });
+        await navigator.share({ files: [file], title: "Calendar" });
         closeCapturePreview();
         return;
       } catch (error) {
@@ -776,7 +837,7 @@ export default function Home() {
     }
     if (typeof navigator.share === "function") {
       try {
-        await navigator.share({ files: [file], title: "Torn pages" });
+        await navigator.share({ files: [file], title: "Calendar" });
         closeCapturePreview();
         return;
       } catch (error) {
@@ -785,6 +846,87 @@ export default function Home() {
     }
     downloadBlobFile(capturePreview.blob, capturePreview.name);
     closeCapturePreview();
+  }
+
+  async function captureCalendar() {
+    const node = calendarCaptureRef.current;
+    if (!node || capturing || capturePreview || archiveOpen) return;
+    setCapturing(true);
+    setCaptureFlash(true);
+    setDatePickerOpen(false);
+    clearSelfRightTimers();
+    rotationRef.current = 0;
+    setRotation(0);
+    document.body.classList.add("is-capturing-calendar");
+    // Flatten to a front-facing 2D pad so html-to-image can rasterize on WebKit
+    // (preserve-3d / translateZ trees often come out fully black).
+    flushSync(() => setCalendarCapturePose(true));
+    window.setTimeout(() => setCaptureFlash(false), 260);
+    try {
+      await new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
+      await Promise.all(
+        Array.from(node.querySelectorAll("img")).map(async (img) => {
+          try {
+            if (typeof img.decode === "function") await img.decode();
+          } catch {
+            /* still try to paint whatever decoded */
+          }
+        }),
+      );
+
+      const rect = node.getBoundingClientRect();
+      const padBlob = await htmlToImageToBlob(node, {
+        cacheBust: false,
+        skipFonts: true,
+        pixelRatio: Math.min(2, window.devicePixelRatio || 1.5),
+        width: Math.max(1, Math.round(rect.width)),
+        height: Math.max(1, Math.round(rect.height)),
+        backgroundColor: "#ecece9",
+        style: {
+          transform: "none",
+          transformStyle: "flat",
+        },
+        filter: (el) => {
+          if (!(el instanceof HTMLElement)) return true;
+          if (
+            el.classList.contains("gesture-layer")
+            || el.classList.contains("capture-flash")
+            || el.classList.contains("capture-preview")
+            || el.classList.contains("calendar-side")
+            || el.classList.contains("back-board")
+            || el.classList.contains("rear-frame")
+            || el.classList.contains("tear-spine")
+            || el.classList.contains("remaining-pages")
+            || el.classList.contains("calendar-depth-shadow")
+            || el.classList.contains("paper-next")
+            || el.classList.contains("binder-top-face")
+            || el.classList.contains("binder-back-face")
+            || el.classList.contains("spine-face")
+            || el.classList.contains("ring-depth")
+          ) return false;
+          return true;
+        },
+      });
+      if (!padBlob || padBlob.size === 0) throw new Error("Capture returned no image data");
+
+      // Compose a full-viewport wallpaper: same screen height, no chrome,
+      // calendar only, with top margin so it sits below the status-bar area.
+      const blob = await composeCalendarWallpaper(padBlob);
+      presentCapturedBlob(blob, "calendar-wallpaper");
+    } catch (error) {
+      console.warn("Could not capture calendar", error);
+      if (capturePreviewUrlRef.current) URL.revokeObjectURL(capturePreviewUrlRef.current);
+      capturePreviewUrlRef.current = null;
+      setCapturePreview({
+        url: "",
+        blob: new Blob(),
+        name: "calendar-wallpaper.png",
+      });
+    } finally {
+      document.body.classList.remove("is-capturing-calendar");
+      setCalendarCapturePose(false);
+      setCapturing(false);
+    }
   }
 
   async function captureArchive() {
@@ -906,6 +1048,15 @@ export default function Home() {
           <button className={index === todayIndex(dates) && !finished ? "is-selected" : undefined} aria-pressed={index === todayIndex(dates) && !finished} type="button" onClick={() => { setDatePickerOpen(false); jumpTo(todayIndex(dates)); }}>TODAY</button>
           <button className={datePickerOpen || (index !== 0 && index !== todayIndex(dates) && !finished) ? "is-selected" : undefined} aria-pressed={datePickerOpen} type="button" onClick={() => { setPickerMonth(current.getMonth()); setDatePickerOpen((open) => !open); }}>DATE</button>
         </div>
+        <button
+          className="calendar-capture"
+          type="button"
+          aria-label="Capture calendar wallpaper"
+          onClick={captureCalendar}
+          disabled={capturing || !!capturePreview || archiveOpen}
+        >
+          <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M9 4 7.6 6H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-2.6L15 4Z" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" /><circle cx="12" cy="13" r="3.4" fill="none" stroke="currentColor" strokeWidth="1.8" /></svg>
+        </button>
       </header>
 
       {datePickerOpen && (
@@ -926,6 +1077,7 @@ export default function Home() {
 
       <div className="calendar-zoom-wrap">
         <section
+          ref={calendarCaptureRef}
           className={`calendar-shell${finished ? " is-finished" : ""}${selfRighting ? " is-self-righting" : ""}`}
           aria-label="2026 tear-off calendar"
           style={{
@@ -940,7 +1092,9 @@ export default function Home() {
           // back board, binder) at a fixed pixel size — so the stack's
           // thickness-to-width ratio would visibly warp as you zoomed while
           // rotated. scale3d scales X/Y/Z together, keeping it constant.
-          transform: `rotateY(${rotation || 0.01}deg) scale3d(${zoom}, ${zoom}, ${zoom})`,
+          transform: calendarCapturePose
+            ? "rotateY(0.01deg) scale3d(1, 1, 1)"
+            : `rotateY(${rotation || 0.01}deg) scale3d(${zoom}, ${zoom}, ${zoom})`,
           "--removed-depth": `${removedDepth}px`,
           "--removed-depth-negative": `${-removedDepth}px`,
           "--remaining-depth": `${remainingDepth}px`,
@@ -1097,12 +1251,12 @@ export default function Home() {
         <div className="capture-preview" role="dialog" aria-modal="true" aria-label="Captured image">
           <div className="capture-preview-panel">
             {capturePreview.url ? (
-              <img src={capturePreview.url} alt="Captured torn pages" />
+              <img src={capturePreview.url} alt="Captured image" />
             ) : (
               <p className="capture-preview-hint">캡처에 실패했습니다. 닫은 뒤 다시 시도해 주세요.</p>
             )}
             {capturePreview.url && (
-              <p className="capture-preview-hint">이미지 저장을 누르면 갤러리에 저장할 수 있습니다</p>
+              <p className="capture-preview-hint">이미지 저장을 누르면 갤러리에 저장할 수 있습니다 · 배경화면용 위 여백 포함</p>
             )}
             <div className="capture-preview-actions">
               {capturePreview.url && capturePreview.blob.size > 0 && (

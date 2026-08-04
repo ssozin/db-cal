@@ -244,6 +244,49 @@ button{font:inherit}
 .capture-flash{position:fixed;z-index:3000;inset:0;background:#fff;opacity:0;pointer-events:none}
 .capture-flash.is-flashing{animation:captureShutter .26s ease-out}
 @keyframes captureShutter{0%{opacity:0}12%{opacity:.92}100%{opacity:0}}
+/* Mobile-only main calendar capture — desktop keeps the side toolbar clean. */
+.calendar-capture{display:none}
+@media(max-width:640px){
+  .calendar-capture{position:fixed;z-index:25;top:14px;right:14px;display:grid;width:36px;height:36px;place-items:center;border:1px solid rgba(0,0,0,.2);border-radius:999px;background:rgba(255,255,255,.82);color:#242428;padding:0;cursor:pointer;backdrop-filter:blur(10px);transition:transform .15s ease,opacity .15s ease,background .15s ease,color .15s ease}
+  .calendar-capture:hover:not(:disabled),.calendar-capture:active:not(:disabled){background:#1f1f22;color:#fff}
+  .calendar-capture:active:not(:disabled){transform:scale(.92)}
+  .calendar-capture:disabled{opacity:.45;cursor:default}
+  .archive-mode .calendar-capture{visibility:hidden;opacity:0;pointer-events:none}
+}
+body.is-capturing-calendar .toolbar,
+body.is-capturing-calendar .floor-pile-trigger,
+body.is-capturing-calendar .calendar-capture,
+body.is-capturing-calendar .date-picker{visibility:hidden;opacity:0;pointer-events:none}
+/* Flatten the 3D pad for html-to-image — preserve-3d trees often rasterize black on WebKit. */
+body.is-capturing-calendar .calendar-zoom-wrap{transform:none !important}
+body.is-capturing-calendar .calendar-shell,
+body.is-capturing-calendar .calendar-shell *{transform-style:flat !important;perspective:none !important}
+body.is-capturing-calendar .calendar-shell{transform:none !important;filter:none !important}
+body.is-capturing-calendar .paper-stack,
+body.is-capturing-calendar .paper-current,
+body.is-capturing-calendar .paper-next,
+body.is-capturing-calendar .binder,
+body.is-capturing-calendar .ring,
+body.is-capturing-calendar .remaining-pages{transform:none !important;filter:none !important;box-shadow:none !important}
+body.is-capturing-calendar .calendar-side,
+body.is-capturing-calendar .binder:before,
+body.is-capturing-calendar .binder:after,
+body.is-capturing-calendar .binder-top-face,
+body.is-capturing-calendar .binder-back-face,
+body.is-capturing-calendar .back-board,
+body.is-capturing-calendar .rear-frame,
+body.is-capturing-calendar .tear-spine,
+body.is-capturing-calendar .spine-face,
+body.is-capturing-calendar .paper-stack:before,
+body.is-capturing-calendar .paper-stack:after,
+body.is-capturing-calendar .remaining-pages,
+body.is-capturing-calendar .calendar-depth-shadow,
+body.is-capturing-calendar .paper-next,
+body.is-capturing-calendar .gesture-layer,
+body.is-capturing-calendar .ring:before,
+body.is-capturing-calendar .ring-depth{display:none !important}
+body.is-capturing-calendar .paper-current{position:relative;inset:auto;z-index:2}
+body.is-capturing-calendar .paper-stack{height:auto}
 /* Hide chrome while rasterizing so the saved image is just the card layout. */
 .archive-view.is-capturing .archive-toolbar,
 .archive-view.is-capturing .archive-instruction{visibility:hidden;opacity:0}
