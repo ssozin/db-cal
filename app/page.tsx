@@ -873,18 +873,26 @@ export default function Home() {
           }
         }),
       );
+      // Let the capture-mode box model settle (binder + fixed paper-stack height).
+      void node.offsetHeight;
+      await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
 
-      const rect = node.getBoundingClientRect();
+      const width = Math.max(1, Math.round(node.offsetWidth));
+      const height = Math.max(1, Math.round(node.offsetHeight));
       const padBlob = await htmlToImageToBlob(node, {
         cacheBust: false,
         skipFonts: true,
         pixelRatio: Math.min(2, window.devicePixelRatio || 1.5),
-        width: Math.max(1, Math.round(rect.width)),
-        height: Math.max(1, Math.round(rect.height)),
+        width,
+        height,
+        canvasWidth: width,
+        canvasHeight: height,
         backgroundColor: "#ecece9",
         style: {
           transform: "none",
           transformStyle: "flat",
+          width: `${width}px`,
+          height: `${height}px`,
         },
         filter: (el) => {
           if (!(el instanceof HTMLElement)) return true;
