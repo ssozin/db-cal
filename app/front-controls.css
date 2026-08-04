@@ -138,8 +138,8 @@
 }
 
 .archive-card-focus-sheet {
-  grid-template-rows: 47% auto 1fr !important;
-  padding: 18px 18px 16px !important;
+  grid-template-rows: 45% auto 1fr !important;
+  padding: 16px 18px 16px !important;
 }
 
 .archive-card-focus-sheet .archive-date {
@@ -148,7 +148,7 @@
   align-items: center !important;
   justify-content: flex-end !important;
   min-height: 0 !important;
-  padding: 0 0 12px !important;
+  padding: 0 0 2px !important;
   overflow: visible !important;
   transform: none !important;
   box-sizing: border-box !important;
@@ -162,15 +162,15 @@
 }
 
 .archive-card-focus-sheet .archive-date span {
-  font-size: clamp(44px, 10.12vw, 62px) !important;
+  font-size: clamp(48px, 10.8vw, 68px) !important;
   line-height: .92 !important;
   letter-spacing: -.035em !important;
 }
 
 .archive-card-focus-sheet .archive-date strong {
-  margin-top: 5px !important;
-  font-size: clamp(81px, 16.5vw, 110px) !important;
-  line-height: .88 !important;
+  margin-top: 3px !important;
+  font-size: clamp(88px, 17.8vw, 120px) !important;
+  line-height: .86 !important;
   letter-spacing: -.045em !important;
 }
 
@@ -181,7 +181,7 @@
 
 .archive-card-focus-sheet .archive-footer {
   align-items: flex-start !important;
-  padding-top: 10px !important;
+  padding-top: 8px !important;
 }
 
 @media (max-width: 640px) {
@@ -190,25 +190,25 @@
   }
 
   .archive-card-focus-sheet {
-    grid-template-rows: 47% auto 1fr !important;
+    grid-template-rows: 45% auto 1fr !important;
     padding: 14px !important;
   }
 
   .archive-card-focus-sheet .archive-date {
     justify-content: flex-end !important;
-    padding: 0 0 10px !important;
+    padding: 0 0 2px !important;
     transform: none !important;
   }
 
   .archive-card-focus-sheet .archive-date span {
-    font-size: clamp(39px, 10.78vw, 54px) !important;
+    font-size: clamp(42px, 11.5vw, 58px) !important;
     line-height: .92 !important;
   }
 
   .archive-card-focus-sheet .archive-date strong {
-    margin-top: 4px !important;
-    font-size: clamp(73px, 18.15vw, 99px) !important;
-    line-height: .88 !important;
+    margin-top: 3px !important;
+    font-size: clamp(78px, 19vw, 106px) !important;
+    line-height: .86 !important;
   }
 
   .archive-card-focus-sheet .archive-photo {
@@ -216,6 +216,6 @@
   }
 
   .archive-card-focus-sheet .archive-footer {
-    padding-top: 8px !important;
+    padding-top: 7px !important;
   }
 }
