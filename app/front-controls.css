@@ -7,7 +7,6 @@ html body .toolbar-actions > button,
 html body .toolbar-actions > button.is-selected {
   -webkit-appearance: none !important;
   appearance: none !important;
-  position: relative !important;
   display: inline-flex !important;
   align-items: center !important;
   justify-content: center !important;
@@ -21,68 +20,22 @@ html body .toolbar-actions > button.is-selected {
   border: 0 !important;
   border-radius: 0 !important;
   outline: 0 !important;
-  background: none !important;
-  background-color: transparent !important;
-  background-image: none !important;
+  background: transparent !important;
   box-shadow: none !important;
-  overflow: visible !important;
   color: #a3a3a3 !important;
-  font-size: 0 !important;
-  line-height: 1 !important;
-  opacity: 1 !important;
-}
-
-html body .toolbar-actions > button::before {
-  content: none !important;
-  display: none !important;
-  width: 0 !important;
-  height: 0 !important;
-  border: 0 !important;
-  background: none !important;
-  box-shadow: none !important;
-}
-
-html body .toolbar-actions > button::after {
-  position: static !important;
-  inset: auto !important;
-  display: inline-block !important;
-  width: auto !important;
-  min-width: 0 !important;
-  height: auto !important;
-  padding: 0 !important;
-  margin: 0 !important;
-  border: 0 !important;
-  border-radius: 0 !important;
-  background: none !important;
-  background-color: transparent !important;
-  background-image: none !important;
-  box-shadow: none !important;
-  transform: none !important;
-  opacity: 1 !important;
-  color: inherit !important;
-  font-family: inherit !important;
   font-size: 11px !important;
   font-weight: 400 !important;
   line-height: 1 !important;
+  opacity: 1 !important;
 }
 
-html body .toolbar-actions > button:nth-child(1)::after {
-  content: "01" !important;
-}
-
-html body .toolbar-actions > button:nth-child(2)::after {
-  content: "02" !important;
-}
-
-html body .toolbar-actions > button:nth-child(3)::after {
-  content: "03" !important;
+html body .toolbar-actions > button::before,
+html body .toolbar-actions > button::after {
+  content: none !important;
+  display: none !important;
 }
 
 html body .toolbar-actions > button.is-selected {
   color: #111 !important;
-}
-
-html body .toolbar-actions > button.is-selected::after {
-  content: "-" !important;
   font-weight: 700 !important;
 }
