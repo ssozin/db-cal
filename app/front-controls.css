@@ -151,6 +151,7 @@
   padding: 6px 0 10px !important;
   overflow: visible !important;
   box-sizing: border-box !important;
+  transform: translateY(20px) !important;
 }
 
 .archive-card-focus-sheet .archive-date span,
@@ -189,6 +190,7 @@
   .archive-card-focus-sheet .archive-date {
     justify-content: center !important;
     padding: 5px 0 10px !important;
+    transform: translateY(20px) !important;
   }
 
   .archive-card-focus-sheet .archive-date span {
