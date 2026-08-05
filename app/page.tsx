@@ -471,10 +471,12 @@ export default function Home() {
   const [archiveOpen, setArchiveOpen] = useState(false);
   const [archiveOffsets, setArchiveOffsets] = useState<Record<number, { x: number; y: number }>>({});
   const [activeArchivePage, setActiveArchivePage] = useState<number | null>(null);
+  const [focusedArchivePage, setFocusedArchivePage] = useState<number | null>(null);
   // Persists which page was picked up last so it stays stacked on top even
   // after it's dropped, instead of falling back under later pages.
   const [archiveZIndices, setArchiveZIndices] = useState<Record<number, number>>({});
   const archiveZCounter = useRef(1000);
+  const archiveTapRef = useRef<{ page: number; time: number; x: number; y: number } | null>(null);
   const [datePickerOpen, setDatePickerOpen] = useState(false);
   const [pickerMonth, setPickerMonth] = useState(() => dates[todayIndex(dates)].getMonth());
   // Depth visuals lag the page index so tear/jump animations never snap the shadow.
@@ -766,7 +768,32 @@ export default function Home() {
     return () => node.removeEventListener("wheel", onArchiveWheel);
   });
 
+  useEffect(() => {
+    if (!archiveOpen) setFocusedArchivePage(null);
+  }, [archiveOpen]);
+
+  useEffect(() => {
+    if (focusedArchivePage === null) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") closeArchiveFocus();
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [focusedArchivePage]);
+
+  function openArchiveFocus(page: number) {
+    archiveDrag.current = null;
+    archiveTapRef.current = null;
+    setActiveArchivePage(null);
+    setFocusedArchivePage(page);
+  }
+
+  function closeArchiveFocus() {
+    setFocusedArchivePage(null);
+  }
+
   function onArchivePointerDown(event: PointerEvent<HTMLElement>, page: number) {
+    if (focusedArchivePage !== null) return;
     unlockTearAudio();
     archivePointers.current.set(event.pointerId, { x: event.clientX, y: event.clientY });
     if (beginArchivePinchIfNeeded()) return;
@@ -776,10 +803,15 @@ export default function Home() {
     archiveZCounter.current += 1;
     setArchiveZIndices((existing) => ({ ...existing, [page]: archiveZCounter.current }));
     playPaperSlideSound(true);
-    event.currentTarget.setPointerCapture(event.pointerId);
+    try {
+      event.currentTarget.setPointerCapture(event.pointerId);
+    } catch {
+      /* Pointer may already be gone on quick taps. */
+    }
   }
 
   function onArchivePointerMove(event: PointerEvent<HTMLElement>) {
+    if (focusedArchivePage !== null) return;
     const drag = archiveDrag.current;
     if (!drag) return;
     const dx = event.clientX - drag.x;
@@ -792,12 +824,40 @@ export default function Home() {
   }
 
   function onArchivePointerUp(event: PointerEvent<HTMLElement>) {
-    const wasDragging = !!archiveDrag.current;
+    const drag = archiveDrag.current;
+    const wasDragging = !!drag;
+    const moved = drag ? Math.hypot(event.clientX - drag.x, event.clientY - drag.y) : Infinity;
+    const page = drag?.page ?? null;
     archivePointers.current.delete(event.pointerId);
     if (archivePointers.current.size < 2) archivePinchStart.current = null;
     archiveDrag.current = null;
     setActiveArchivePage(null);
+    // Treat small pointer jitter as a tap so double-click still registers.
+    if (wasDragging && moved > 14) {
+      playPaperPlaceSound();
+      archiveTapRef.current = null;
+      return;
+    }
     if (wasDragging) playPaperPlaceSound();
+    // Double-tap / second quick tap on the same card opens the focus view
+    // (onDoubleClick alone is unreliable on touch devices).
+    if (page == null || focusedArchivePage !== null) return;
+    const now = performance.now();
+    const prev = archiveTapRef.current;
+    if (
+      prev
+      && prev.page === page
+      && now - prev.time < 420
+      && Math.hypot(event.clientX - prev.x, event.clientY - prev.y) < 36
+    ) {
+      openArchiveFocus(page);
+      return;
+    }
+    archiveTapRef.current = { page, time: now, x: event.clientX, y: event.clientY };
+  }
+
+  function onArchiveCardClick(event: { detail: number }, page: number) {
+    if (event.detail >= 2) openArchiveFocus(page);
   }
 
   function closeCapturePreview() {
@@ -1029,6 +1089,8 @@ export default function Home() {
   const tornCount = finished ? dates.length : index;
   const archiveStart = 0;
   const archivePages = Array.from({ length: tornCount - archiveStart }, (_, offset) => archiveStart + offset);
+  const focusedDate = focusedArchivePage !== null ? dates[focusedArchivePage] : null;
+  const focusedPhoto = focusedDate ? photos[dateKey(focusedDate)] : null;
   const pickerStart = new Date(YEAR, pickerMonth, 1, 12);
   const pickerLead = pickerStart.getDay();
   const pickerLength = new Date(YEAR, pickerMonth + 1, 0, 12).getDate();
@@ -1192,12 +1254,16 @@ export default function Home() {
         </button>
       )}
 
-      <section ref={archiveViewRef} className="archive-view" aria-hidden={!archiveOpen}>
+      <section
+        ref={archiveViewRef}
+        className={`archive-view${focusedArchivePage !== null ? " is-focusing" : ""}`}
+        aria-hidden={!archiveOpen}
+      >
         <div className="archive-toolbar">
           <button className="archive-back" type="button" aria-label="Back to calendar" onClick={() => setArchiveOpen(false)}>
             <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M15 5 7 12l8 7" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
           </button>
-          <button className="archive-capture" type="button" aria-label="Capture torn pages" onClick={captureArchive} disabled={capturing || !!capturePreview}>
+          <button className="archive-capture" type="button" aria-label="Capture torn pages" onClick={captureArchive} disabled={capturing || !!capturePreview || focusedArchivePage !== null}>
             <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M9 4 7.6 6H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-2.6L15 4Z" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" /><circle cx="12" cy="13" r="3.4" fill="none" stroke="currentColor" strokeWidth="1.8" /></svg>
           </button>
         </div>
@@ -1222,7 +1288,7 @@ export default function Home() {
             const rotate = -18 + seeded(pageIndex + 47) * 36;
             return (
               <article
-                className={`archive-page${activeArchivePage === pageIndex ? " is-active" : ""}`}
+                className={`archive-page${activeArchivePage === pageIndex ? " is-active" : ""}${focusedArchivePage === pageIndex ? " is-focused-source" : ""}`}
                 key={pageIndex}
                 style={{
                   top: `${top}%`,
@@ -1236,6 +1302,12 @@ export default function Home() {
                 onPointerMove={onArchivePointerMove}
                 onPointerUp={onArchivePointerUp}
                 onPointerCancel={onArchivePointerUp}
+                onClick={(event) => onArchiveCardClick(event, pageIndex)}
+                onDoubleClick={(event) => {
+                  event.preventDefault();
+                  event.stopPropagation();
+                  openArchiveFocus(pageIndex);
+                }}
               >
                 <div className="archive-date">
                   <span>{weekdays[date.getDay()]}</span>
@@ -1253,6 +1325,28 @@ export default function Home() {
             );
           })}
         </div>
+
+        {focusedArchivePage !== null && focusedDate && (
+          <div className="archive-focus" role="dialog" aria-modal="true" aria-label="Focused torn page">
+            <button className="archive-focus-close" type="button" aria-label="Close focused page" onClick={closeArchiveFocus}>
+              <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
+            </button>
+            <article className="archive-focus-card">
+              <div className="archive-date">
+                <span>{weekdays[focusedDate.getDay()]}</span>
+                <span>{months[focusedDate.getMonth()]}</span>
+                <strong>{String(focusedDate.getDate()).padStart(2, "0")}</strong>
+              </div>
+              <div className="archive-photo">
+                {focusedPhoto ? <img src={focusedPhoto.url} alt="" draggable={false} crossOrigin="anonymous" /> : <div className="photo-placeholder"><span>{dateKey(focusedDate).replaceAll("-", "")}</span></div>}
+              </div>
+              <footer className="archive-footer">
+                <div>{focusedPhoto ? <><span>{focusedPhoto.sourceDate}</span><b>{focusedPhoto.event}</b></> : <b>NO EVENT ARCHIVE</b>}</div>
+                <span>DAY {String(focusedArchivePage + 1).padStart(3, "0")} / 365</span>
+              </footer>
+            </article>
+          </div>
+        )}
       </section>
 
       {capturePreview && (
